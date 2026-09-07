@@ -45,6 +45,8 @@ COUNTRY_ALIASES = {
     "nepal": "NP",
     "qatar": "QA",
     "saudi arabia": "SA",
+    "swiss": "CH",
+    "switzerland": "CH",
     "turkey": "TR",
     "canada": "CA",
     "australia": "AU",
