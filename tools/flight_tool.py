@@ -494,6 +494,20 @@ def search_flights(query: str, limit: int = 4):
 
     flight_data = data.get("data", [])
 
+    # Drop legs that do not belong to the requested route. Without this,
+    # a route query can return unrelated global flights that end up
+    # quoted verbatim in the final plan.
+    if flight_data and (dep_iata or arr_iata):
+        matching = [
+            flight for flight in flight_data
+            if (not dep_iata or (flight.get("departure") or {}).get("iata") == dep_iata)
+            and (not arr_iata or (flight.get("arrival") or {}).get("iata") == arr_iata)
+        ]
+        if matching:
+            flight_data = matching
+        else:
+            flight_data = []
+
     if not flight_data:
         route_text = ""
 
