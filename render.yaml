@@ -1,0 +1,35 @@
+projects:
+  - name: Voyagent
+    environments:
+      - name: Production
+        services:
+          - type: web
+            name: voyagent
+            runtime: python
+            plan: free
+            buildCommand: pip install -r requirements.lock
+            startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+            healthCheckPath: /health
+            envVars:
+              - key: PYTHON_VERSION
+                value: 3.12.13
+              - key: APP_ENV
+                value: production
+              - key: SESSION_SECRET
+                generateValue: true
+              - key: FLIGHT_PROVIDER
+                value: mock
+              - key: HOTEL_PROVIDER
+                value: mock
+              - key: LLM_PROVIDER
+                value: mock
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: voyagent-db
+                  property: connectionString
+        databases:
+          - name: voyagent-db
+            plan: free
+            databaseName: voyagent
+            ipAllowList: []
+            user: voyagent

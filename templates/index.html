@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Flights, stays, a daily itinerary, and a budget. Build a trip with six planning agents. Try it without API keys.">
+  <title>Voyagent. A plan for the places ahead.</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav class="nav" aria-label="Main navigation">
+    <a class="brand" href="/" aria-label="Voyagent home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 5h8l5 13L23 5h6L17 29z" fill="currentColor"/><path d="m3 15 6 3 4 11z" fill="currentColor"/></svg><span>voyagent</span></a>
+    <div class="nav-links"><a href="/#how-it-works">How it works</a><a href="/#agents">The agents</a><a href="/#sample">Sample trip</a></div>
+    <a class="button primary nav-cta" href="/planner">Plan a trip <span aria-hidden="true">↗</span></a>
+  </nav>
+  <main id="main">
+    <div id="landing">
+      <section class="hero wrap">
+        <p class="eyebrow"><span class="status-dot"></span> ONE REQUEST. SIX AGENTS.</p>
+        <h1>Less planning.<br><span class="hero-color">More going.</span></h1>
+        <p class="hero-subtitle">Tell us where you want to go.<br>Get the flights, the stay, and a plan for every day.</p>
+        <form id="hero-form" class="trip-input">
+          <label class="sr-only" for="trip-message">Describe your trip</label>
+          <textarea id="trip-message" rows="2" required maxlength="2000" placeholder="7 days in Tokyo from San Francisco, under $2,500..."></textarea>
+          <div class="input-bottom"><span><span aria-hidden="true">✳</span> A destination. A few details. A starting point.</span><button class="button primary" type="submit">Make a plan <span aria-hidden="true">↗</span></button></div>
+        </form>
+        <div class="suggestions"><span>Or start here</span><button data-example="Tokyo">7 days in Tokyo ↗</button><button data-example="Lisbon">5 days in Lisbon ↗</button><button data-example="Paris">4 days in Paris ↗</button></div>
+        <p class="fine-print">No account. No API keys. Demo prices are labeled MOCK.</p>
+      </section>
+      <section class="destinations wrap" aria-label="Trip ideas">
+        <article class="destination"><button class="destination-image" data-example="Tokyo" aria-label="Plan 7 days in Tokyo"><img src="/static/images/tokyo.jpg" alt="Tokyo skyline with Tokyo Tower" fetchpriority="high"><span class="image-tag">01 / JAPAN</span><span class="round-arrow" aria-hidden="true">↗</span></button><div class="destination-caption"><h3>Tokyo.</h3><span>7 days · Food &amp; city walks</span></div></article>
+        <article class="destination"><button class="destination-image" data-example="Lisbon" aria-label="Plan 5 days in Lisbon"><img src="/static/images/lisbon.jpg" alt="Buildings and streets of Lisbon"><span class="image-tag">02 / PORTUGAL</span><span class="round-arrow" aria-hidden="true">↗</span></button><div class="destination-caption"><h3>Lisbon.</h3><span>5 days · History &amp; river walks</span></div></article>
+        <article class="destination"><button class="destination-image" data-example="Paris" aria-label="Plan 4 days in Paris"><img src="/static/images/paris.jpg" alt="The Eiffel Tower above Paris rooftops"><span class="image-tag">03 / FRANCE</span><span class="round-arrow" aria-hidden="true">↗</span></button><div class="destination-caption"><h3>Paris.</h3><span>4 days · Art &amp; neighborhood walks</span></div></article>
+      </section>
+      <section id="how-it-works" class="section wrap">
+        <div class="section-heading"><div><p class="eyebrow">FROM AN IDEA TO AN ITINERARY</p><h2>A little input.<br>A whole trip.</h2></div><p>You set the direction.<br>Six agents work through the details.</p></div>
+        <div class="steps"><article><span class="step-number">01</span><div class="step-art" aria-hidden="true"><span class="mini-input">A week in Tokyo. $2,500. <b>↗</b></span></div><h4>Tell us the outline.</h4><p>Add your destination, dates, and budget. Start with a sentence or fill in the form.</p></article><article><span class="step-number">02</span><div class="step-art node-art" aria-hidden="true"><span>↗</span><i></i><span>⌂</span><i></i><span>✓</span></div><h4>Let the agents plan.</h4><p>Flights, stays, daily stops, and costs come together in one saved trip.</p></article><article><span class="step-number">03</span><div class="step-art" aria-hidden="true"><div class="mini-plan"><span>YOUR TRIP</span><b>Tokyo. 7 days.</b><div>✓ Flights &nbsp; ✓ Stay &nbsp; ✓ Budget</div></div></div><h4>Make it your own.</h4><p>Change the budget. Plan for rain. Copy your plan or take a PDF with you.</p></article></div>
+      </section>
+      <section id="agents" class="section wrap">
+        <div class="section-heading"><div><p class="eyebrow">A TEAM WITH SIX JOBS</p><h2>Every detail.<br>Someone on it.</h2></div><p>Each agent has a defined task.<br>Each result informs the next.</p></div>
+        <div class="agents-grid">
+          <article><span class="agent-icon" aria-hidden="true">↗</span><span class="agent-number">01</span><h4>Flight research.</h4><p>Finds route options. Keeps schedules and fare estimates clearly labeled.</p><span class="agent-foot">Routes &amp; schedules</span></article>
+          <article><span class="agent-icon" aria-hidden="true">⌂</span><span class="agent-number">02</span><h4>Hotel research.</h4><p>Finds places to stay. Accounts for nights, rooms, and travelers.</p><span class="agent-foot">Stays &amp; locations</span></article>
+          <article><span class="agent-icon" aria-hidden="true">☷</span><span class="agent-number">03</span><h4>Daily itinerary.</h4><p>Groups stops by area. Leaves space for meals, transfers, and arrival.</p><span class="agent-foot">Days &amp; distances</span></article>
+          <article><span class="agent-icon" aria-hidden="true">↻</span><span class="agent-number">04</span><h4>Change of plans.</h4><p>Reworks affected days for rain, a delayed flight, or a cancellation.</p><span class="agent-foot">Disruption &amp; replanning</span></article>
+          <article><span class="agent-icon" aria-hidden="true">⊕</span><span class="agent-number">05</span><h4>Budget check.</h4><p>Adds every cost and a 10% reserve. Flags any amount over your budget.</p><span class="agent-foot">Costs &amp; tradeoffs</span></article>
+          <article><span class="agent-icon" aria-hidden="true">▤</span><span class="agent-number">06</span><h4>Trip report.</h4><p>Brings the results into one plan. Ready to read, copy, and export.</p><span class="agent-foot">One place for the details</span></article>
+        </div>
+      </section>
+      <section id="sample" class="section wrap">
+        <div class="section-heading"><div><p class="eyebrow">THE PLAN, BEFORE YOU PLAN</p><h2>One week in Tokyo.</h2></div><button class="button soft" data-example="Tokyo">Open this trip <span aria-hidden="true">↗</span></button></div>
+        <div class="sample-card"><div class="sample-photo"><img src="/static/images/tokyo.jpg" alt="Tokyo cityscape" loading="lazy"><span class="image-tag">35.6762° N, 139.6503° E</span></div><div class="sample-detail"><div class="sample-kicker"><span class="badge">Popular</span><span class="label">7 DAYS / 1 TRAVELER</span></div><h3>City walks.<br>Time at the table.</h3><p>From San Francisco to Tokyo. Six nights in Asakusa. A day-by-day plan with room to stop.</p><div class="sample-line"><span>01 &nbsp; Arrive in Asakusa</span><span>↗</span></div><div class="sample-line"><span>02 &nbsp; Walk through Shibuya</span><span>↗</span></div><div class="sample-line"><span>03 &nbsp; Spend a day in Ueno</span><span>↗</span></div><div class="sample-total"><div><span class="label">ESTIMATED TRIP TOTAL</span><strong>$1,948.10 <small>USD · MOCK</small></strong></div><span class="saving">$551.90 below budget<br><small>MOCK estimate</small></span></div></div></div>
+      </section>
+      <section class="section faq wrap"><div><p class="eyebrow">A FEW THINGS TO KNOW</p><h2>Before you go.</h2></div><div class="faq-list"><details><summary>Are these real bookings?</summary><p>No. The default demo uses deterministic fixtures. MOCK prices are estimates. No tickets or rooms are purchased.</p></details><details><summary>Can I change a trip later?</summary><p>Yes. Your browser remembers the current trip. Reopen the planner to change the length, budget, or disruption scenario.</p></details><details><summary>What happens when plans change?</summary><p>Ask for rain on a specific day or a flight delay. The planner replaces or removes affected stops and calculates the budget again.</p></details><details><summary>Can I use live data?</summary><p>The server can use AviationStack, Tavily, Groq, and OpenAI when configured. Live research is labeled LIVE. Unverified cost allowances remain MOCK.</p></details></div></section>
+    </div>
+    <div id="planner" class="planner wrap" hidden>
+      <div class="planner-heading"><div><a href="/" class="back-link">← Back to the possibilities</a><h1>Your next trip.</h1></div><button id="new-trip" class="button outline">New trip <span aria-hidden="true">+</span></button></div>
+      <div class="planner-grid">
+        <aside class="planner-aside">
+          <form id="planner-form" class="card form-card"><div class="card-heading"><h4>The starting point.</h4><span class="label">USD</span></div>
+            <label for="destination">Where to?</label><select id="destination" name="destination"><option>Tokyo</option><option>Lisbon</option><option>Paris</option></select>
+            <label for="origin">Flying from</label><select id="origin" name="origin"><option>San Francisco</option><option>New York</option><option>Toronto</option><option>London</option><option>Chennai</option><option>Tokyo</option><option>Lisbon</option><option>Paris</option></select>
+            <label for="start-date">Arrival date</label><input id="start-date" name="start-date" type="date" required>
+            <div class="form-pair"><div><label for="days">Days</label><input id="days" name="days" type="number" value="7" min="2" max="14" required></div><div><label for="travelers">Travelers</label><input id="travelers" name="travelers" type="number" value="1" min="1" max="8" required></div></div>
+            <label for="budget">Total budget in USD</label><input id="budget" name="budget" type="number" min="100" max="100000" value="2500" step="0.01" required>
+            <label for="interests">Interests</label><select id="interests" name="interests"><option value="food walking">Food &amp; walking</option><option value="art history">Art &amp; history</option><option value="history walking">History &amp; walking</option></select>
+            <button class="button primary full" type="submit">Build my trip <span aria-hidden="true">↗</span></button><p class="caption">Estimates include a 10% reserve. No bookings are made.</p>
+          </form>
+          <div class="mode-note"><span class="status-dot"></span><p id="provider-note">Demo mode. All prices are MOCK.<br>No API keys needed.</p></div>
+        </aside>
+        <section class="results" aria-label="Trip results">
+          <div id="status" class="status-message" role="status" aria-live="polite" hidden></div>
+          <div id="error" class="error-message" role="alert" hidden></div>
+          <div id="empty-state" class="empty-state card"><div class="empty-mark" aria-hidden="true">↗</div><p class="eyebrow">THE WORLD CAN WAIT A SECOND</p><h2>A trip starts<br>with a sentence.</h2><p>Set your destination and a few details.<br>We will work out the days in between.</p><button class="button soft" data-example="Tokyo">Try the Tokyo trip ↗</button></div>
+          <div id="plan-content" hidden>
+            <div class="result-top"><div><p id="trip-kicker" class="eyebrow"></p><h2 id="trip-title"></h2><p id="trip-meta" class="muted"></p></div><div class="export-actions"><button id="copy-plan" class="button outline">Copy plan</button><button id="pdf-plan" class="button primary">Export PDF ↗</button></div></div>
+            <div id="agent-trace" class="trace" aria-label="Completed agents"></div>
+            <div class="tablist" role="tablist" aria-label="Plan sections"><button id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-tab="overview">Overview</button><button id="tab-flights" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-flights" data-tab="flights">Flights</button><button id="tab-hotels" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-hotels" data-tab="hotels">Hotels</button><button id="tab-itinerary" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-itinerary" data-tab="itinerary">Itinerary</button><button id="tab-budget" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-budget" data-tab="budget">Budget</button></div>
+            <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0"></div><div id="panel-flights" role="tabpanel" aria-labelledby="tab-flights" tabindex="0" hidden></div><div id="panel-hotels" role="tabpanel" aria-labelledby="tab-hotels" tabindex="0" hidden></div><div id="panel-itinerary" role="tabpanel" aria-labelledby="tab-itinerary" tabindex="0" hidden></div><div id="panel-budget" role="tabpanel" aria-labelledby="tab-budget" tabindex="0" hidden></div>
+            <div class="card replan"><div class="card-heading"><div><p class="eyebrow">SAME TRIP. NEW DETAILS.</p><h4>Plans change.</h4></div><span class="agent-icon" aria-hidden="true">↻</span></div><p>Change your budget or test a disruption. Your trip stays in this browser.</p><div class="replan-chips"><button data-replan="Plan for rain on day 2">Rain on day 2</button><button data-replan="My flight has a 4 hour delay on day 1">4 hour flight delay</button><button data-replan="Clear disruption">Clear disruption</button></div><form id="replan-form"><label class="sr-only" for="replan-message">Change your trip</label><input id="replan-message" placeholder="Make it 5 days, under $2,000..." minlength="3" maxlength="2000" required><button class="button primary" type="submit" aria-label="Update trip">↗</button></form><div id="changes" aria-live="polite"></div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer><div class="wrap"><div class="footer-top"><div><p class="eyebrow">A PLAN FOR THE PLACES AHEAD</p><h2>Go from someday<br>to a day-by-day.</h2></div><a class="button inverse" href="/planner">Plan a trip ↗</a></div><div class="footer-bottom"><a class="brand" href="/">↗ voyagent</a><span>Six agents. One itinerary.</span><span>Built for the next departure. © 2026</span></div></div></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
