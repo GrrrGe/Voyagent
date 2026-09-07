@@ -170,8 +170,9 @@ function renderPlan() {
   $('agent-trace').replaceChildren(...plan.trace.map(name => E('span', '', `✓ ${name}`)));
   renderOverview(); renderFlights(); renderHotels(); renderItinerary(); renderBudget();
   $('changes').replaceChildren(...plan.changes.map(change => E('p', 'change-note', change)));
-  $('destination').value = plan.trip.destination; $('origin').value = plan.trip.origin; $('days').value = plan.trip.days;
-  $('travelers').value = plan.trip.travelers; $('budget').value = plan.trip.budget_cents / 100; $('start-date').value = plan.trip.start_date;
+  const set = (id, value) => { const el = $(id); if (el) el.value = value; };
+  set('destination', plan.trip.destination); set('origin', plan.trip.origin); set('days', plan.trip.days);
+  set('travelers', plan.trip.travelers); set('budget', plan.trip.budget_cents / 100); set('start-date', plan.trip.start_date);
   tab('overview');
 }
 function bind(id, handler) {
@@ -210,7 +211,9 @@ document.querySelectorAll('[data-tab]').forEach(button => {
 const newTrip = $('new-trip');
 if (newTrip) newTrip.addEventListener('click', () => {
   saveThread(null); plan = null; $('plan-content').hidden = true; $('empty-state').hidden = false; $('error').hidden = true;
-  $('planner-form').reset(); setDefaultDate(); $('destination').focus(); toast('A new trip is ready to plan.');
+  const form = $('planner-form'); if (form) form.reset(); setDefaultDate();
+  const dest = $('destination'); if (dest) dest.focus(); else $('trip-message').focus();
+  toast('A new trip is ready to plan.');
 });
 const copyPlan = $('copy-plan');
 if (copyPlan) copyPlan.addEventListener('click', async () => {

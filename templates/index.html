@@ -32,20 +32,8 @@
         <div class="input-bottom"><span><span aria-hidden="true">✳</span> <span id="char-count">0 / 800</span> · Ctrl + Enter to send.</span><button class="button primary" type="submit">Generate Plan <span aria-hidden="true">↗</span></button></div>
       </form>
       <div class="suggestions"><span>Or start here</span><button data-example="Japan">🗾 Japan Trip</button><button data-example="Dubai">🏙️ Dubai Trip</button><button data-example="Thailand">🏝️ Thailand Trip</button><button data-example="Flights">🌍 Global Flights</button></div>
-      <p class="fine-print">No account needed. AI-generated plan with estimated costs. No bookings are made.</p>
-      <div class="planner-grid">
-        <aside class="planner-aside">
-          <form id="planner-form" class="card form-card"><div class="card-heading"><h4>The starting point.</h4><span class="label">USD</span></div>
-            <label for="destination">Where to?</label><select id="destination" name="destination"><option>Tokyo</option><option>Lisbon</option><option>Paris</option><option>Dubai</option><option>Bangkok</option></select>
-            <label for="origin">Flying from</label><select id="origin" name="origin"><option>San Francisco</option><option>New York</option><option>Toronto</option><option>London</option><option>Chennai</option><option>Dhaka</option><option>Tokyo</option><option>Lisbon</option><option>Paris</option><option>Dubai</option><option>Bangkok</option></select>
-            <label for="start-date">Arrival date</label><input id="start-date" name="start-date" type="date" required>
-            <div class="form-pair"><div><label for="days">Days</label><input id="days" name="days" type="number" value="7" min="2" max="14" required></div><div><label for="travelers">Travelers</label><input id="travelers" name="travelers" type="number" value="1" min="1" max="8" required></div></div>
-            <label for="budget">Total budget in USD</label><input id="budget" name="budget" type="number" min="100" max="100000" value="2500" step="0.01" required>
-            <label for="interests">Interests</label><select id="interests" name="interests"><option value="food walking">Food &amp; walking</option><option value="art history">Art &amp; history</option><option value="history walking">History &amp; walking</option></select>
-            <button class="button primary full" type="submit">Build my trip <span aria-hidden="true">↗</span></button><p class="caption">Estimates include a 10% reserve. No bookings are made.</p>
-          </form>
-          <div class="mode-note"><span class="status-dot"></span><p id="provider-note">AI-powered planning. Costs are estimates.</p></div>
-        </aside>
+      <p class="fine-print">No account needed. AI-generated plan with estimated costs. No bookings are made. <span id="provider-note">AI-powered planning.</span></p>
+      <div class="planner-grid single">
         <section class="results" aria-label="Trip results">
           <div id="status" class="status-message" role="status" aria-live="polite" hidden></div>
           <div id="error" class="error-message" role="alert" hidden></div>

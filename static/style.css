@@ -40,3 +40,4 @@ footer{background:var(--forest-deep)}
 .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 .footer-stack{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:48px;padding-top:24px;border-top:1px solid var(--forest);font-size:var(--caption)}
 .footer-stack>span:first-child{font-weight:650;font-size:var(--body)}
+.planner-grid.single{grid-template-columns:minmax(0,1fr)}
