@@ -16,14 +16,14 @@ def tavily_search(query: str):
         dict: The search results from the Tavily API.
     """
     try:
-        response = client.search(query , max_results=5 , search_depth="advanced")
+        response = client.search(query , max_results=3 , search_depth="advanced")
         results = []
         for i , r in enumerate(response['results'] , 1):
             title = r.get('title', 'No Title')
             url = r.get('url', 'No URL')
             snippet = r.get('content', '').strip()
-            if len(snippet) > 500:
-                snippet = snippet[:500].rsplit(" " , 1)[0] + "..."
+            if len(snippet) > 300:
+                snippet = snippet[:300].rsplit(" " , 1)[0] + "..."
             results.append(f"{i}. {title}\nURL: {url}\nSnippet: {snippet}\n")
         return "\n\n".join(results)
         

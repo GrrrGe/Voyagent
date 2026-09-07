@@ -455,7 +455,7 @@ Arrival:
 """.strip()
 
 
-def search_flights(query: str, limit: int = 10):
+def search_flights(query: str, limit: int = 4):
     if not API_KEY:
         return (
             "Flight API error: AVIATIONSTACK_API_KEY is missing.\n"
