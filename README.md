@@ -1,5 +1,7 @@
 # 🧭 Voyagent — AI Multi-Agent Travel Planner
 
+**Live demo:** https://voyagent-live.onrender.com/
+
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)
@@ -7,13 +9,9 @@
 ![Groq](https://img.shields.io/badge/LLM-Groq%20Llama%203.3-F55036)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 
-Voyagent is an AI travel planner built on a **LangGraph multi-agent pipeline**. You describe a trip in
-plain language — destination, days, budget — and four specialized agents run in sequence to search
-live flights, find hotels, build a day-by-day itinerary, and compile it all into one final,
-ready-to-read travel plan.
+Voyagent is an AI travel planner built on a **LangGraph multi-agent pipeline**. You describe a trip in plain language — destination, days, budget — and four specialized agents run in sequence to search live flights, find hotels, build a day-by-day itinerary, and compile it all into one final, ready-to-read travel plan.
 
-> ⚠️ Live flight data (via AviationStack) reflects flight status/schedules, not ticket prices. Use it
-> for route/schedule research, not fare booking.
+> ⚠️ Live flight data (via AviationStack) reflects flight status/schedules, not ticket prices. Use it for route/schedule research, not fare booking.
 
 ---
 
@@ -60,8 +58,9 @@ ready-to-read travel plan.
 | **Web/hotel search** | Tavily |
 | **Flight data** | AviationStack |
 | **Frontend** | HTML5, CSS3, vanilla JavaScript, Jinja2 templates |
-| **Package manager** | `uv` (with `pip` / `requirements.txt` fallback) |
+| **Package manager** | `pip` (with pinned `requirements.lock`) |
 | **Containerization** | Docker |
+| **Deployment** | Render Blueprint (`render.yaml`) |
 
 ### Detail
 
@@ -85,16 +84,15 @@ ready-to-read travel plan.
 - [`html2pdf.js`](https://github.com/eKoopmans/html2pdf.js) — exports the generated plan as a PDF
 
 **Tooling / Ops**
-- [`uv`](https://github.com/astral-sh/uv) — Python package/dependency manager (`pyproject.toml` + `uv.lock`)
 - Docker — containerized deployment (see [`Dockerfile`](Dockerfile))
+- Render Blueprint — one-click deploy (see [`render.yaml`](render.yaml))
 - `python-dotenv` — loads secrets from `.env` in local development
 
 ---
 
 ## Architecture
 
-Voyagent runs a fixed, single-pass LangGraph pipeline — each node below is a real graph node in
-[`backend.py`](backend.py), not a simulated step:
+Voyagent runs a fixed, single-pass LangGraph pipeline — each node below is a real graph node in [`backend.py`](backend.py), not a simulated step:
 
 ```mermaid
 flowchart LR
@@ -117,9 +115,7 @@ flowchart LR
 | Itinerary Agent | `itinerary_agent` | Sends flight + hotel results to the Groq LLM to draft a day-by-day itinerary |
 | Final Report Agent | `final_agent` | Sends everything to the Groq LLM again to produce the final, formatted trip summary |
 
-State flows through a shared `TravelState` (a `TypedDict`) that accumulates `flight_results`,
-`hotel_results`, `itinerary`, the running `messages` list, and an `llm_calls` counter — all of which
-are returned to the frontend and rendered in separate tabs.
+State flows through a shared `TravelState` (a `TypedDict`) that accumulates `flight_results`, `hotel_results`, `itinerary`, the running `messages` list, and an `llm_calls` counter — all of which are returned to the frontend and rendered in separate tabs.
 
 ---
 
@@ -133,7 +129,7 @@ sequenceDiagram
     participant AV as AviationStack
     participant TV as Tavily
     participant GQ as Groq LLM
-    participant DB as Neon PostgreSQL
+    participant DB as PostgreSQL
 
     U->>F: POST /api/travel {message, thread_id}
     F->>G: run_travel_agent(user_input, thread_id)
@@ -153,6 +149,7 @@ sequenceDiagram
 ```
 
 **In short:**
+
 1. The browser sends the free-text request plus an optional `thread_id` (used to continue a prior conversation).
 2. FastAPI hands it to `run_travel_agent()`, which invokes the compiled LangGraph graph with Postgres checkpointing enabled.
 3. The graph runs its four nodes in order, calling AviationStack, Tavily, and Groq along the way.
@@ -175,9 +172,11 @@ sequenceDiagram
 ├── static/
 │   ├── style.css             # UI styling
 │   └── script.js             # Frontend logic: API calls, tabs, PDF export
-├── pyproject.toml / uv.lock  # Dependency manifest (managed with uv)
-├── requirements.txt          # pip-installable dependency list (used by Dockerfile)
+├── requirements.txt          # Dependency ranges
+├── requirements.lock         # Pinned dependencies (used by Render builds)
+├── render.yaml               # Render Blueprint: web service + environment
 ├── Dockerfile                # Container build for deployment
+├── .env.example              # Example secrets file (copy to .env)
 └── .env                      # Local secrets (not committed)
 ```
 
@@ -193,35 +192,25 @@ sequenceDiagram
 
 ### 1. Clone and install dependencies
 
-```bash
-git clone <your-repo-url>
-cd Multi-Agent-Travel-Planner
-
-# using uv (recommended — matches the committed uv.lock)
-uv sync
-
-# or with plain pip
+```sh
+git clone https://github.com/GrrrGe/Voyagent.git
+cd Voyagent
 python -m venv .venv
-.venv\Scripts\activate        # Windows
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### 2. Configure environment variables
 
-Create a `.env` file in the project root (see [Environment variables](#environment-variables) below).
+Create a `.env` file in the project root (see [Environment variables](#environment-variables) below). An example is provided in [`.env.example`](.env.example).
 
 ### 3. Run the app
 
-```bash
-# with uv
-uv run uvicorn app:app --reload
-
-# or directly
-python app.py
+```sh
+.venv/bin/python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-The app starts at **http://127.0.0.1:8000**. On first run, `backend.py` automatically creates the
-LangGraph checkpoint tables in your Postgres database.
+The app starts at **http://127.0.0.1:8000**. On first run, `backend.py` automatically creates the LangGraph checkpoint tables in your Postgres database.
 
 ---
 
@@ -231,7 +220,7 @@ Create a `.env` file with the following:
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL (Neon) connection string used for LangGraph checkpointing |
+| `DATABASE_URL` | ✅ | PostgreSQL connection string used for LangGraph checkpointing |
 | `GROQ_API_KEY` | ✅ | Groq API key — powers the itinerary and final report agents |
 | `TAVILY_API_KEY` | ✅ | Tavily API key — powers the hotel search agent |
 | `AVIATIONSTACK_API_KEY` | ✅ | AviationStack API key — powers the flight search agent |
@@ -268,8 +257,7 @@ DEFAULT_ORIGIN=DEL
 }
 ```
 
-`thread_id` is optional — omit it (or pass `null`) to start a new conversation; pass a previously
-returned `thread_id` to continue an existing one using its saved checkpoint.
+`thread_id` is optional — omit it (or pass `null`) to start a new conversation; pass a previously returned `thread_id` to continue an existing one using its saved checkpoint.
 
 **Response**
 
@@ -291,7 +279,7 @@ On failure, the API returns a `4xx`/`5xx` status with `{"success": false, "error
 
 ## Running with Docker
 
-```bash
+```sh
 docker build -t voyagent .
 docker run -p 8000:8000 --env-file .env voyagent
 ```
@@ -302,15 +290,11 @@ The container installs dependencies from `requirements.txt` and starts `uvicorn 
 
 ## Conversation memory / checkpointing
 
-Voyagent uses `langgraph-checkpoint-postgres` (`PostgresSaver`) so every run of the graph is saved
-against a `thread_id`. This means:
+Voyagent uses `langgraph-checkpoint-postgres` (`PostgresSaver`) so every run of the graph is saved against a `thread_id`. This means:
 
 - Reusing a `thread_id` resumes the same LangGraph conversation state instead of starting fresh.
-- All checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`)
-  live in your configured Postgres database and are created automatically via `checkpointer.setup()`
-  on startup.
-- The frontend stores the active `thread_id` in `localStorage` so a returning browser session continues
-  the same plan; "New plan" clears it and starts a fresh thread.
+- All checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`) live in your configured Postgres database and are created automatically via `checkpointer.setup()` on startup.
+- The frontend stores the active `thread_id` in `localStorage` so a returning browser session continues the same plan; "New plan" clears it and starts a fresh thread.
 
 ---
 
