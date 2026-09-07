@@ -39,7 +39,7 @@ def test_rejected_change_preserves_completed_plan(client):
     assert client.get(f'/api/travel/{first["thread_id"]}').json()['trip'] == first['trip']
 
 def test_markup_and_static_files(client):
-    for path in ['/', '/planner', '/static/style.css', '/static/script.js', '/static/fonts/InterVariable.woff2', '/static/images/tokyo.jpg']:
+    for path in ['/', '/planner', '/about', '/how-it-works', '/static/style.css', '/static/script.js', '/static/fonts/InterVariable.woff2', '/static/images/tokyo.jpg']:
         response = client.get(path)
         assert response.status_code == 200
         assert 'frame-ancestors' in response.headers['content-security-policy']
@@ -71,4 +71,4 @@ def test_openai_health_and_call_count(client, monkeypatch):
     result = client.post('/api/travel', json={'message': SAMPLE})
     assert result.status_code == 200
     assert result.json()['llm_calls'] == 2
-    assert result.json()['budget']['price_source'] == 'MOCK'
+    assert result.json()['budget']['price_source'] == 'ESTIMATED'

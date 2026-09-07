@@ -23,7 +23,7 @@ def run(state):
         times = [(900, 990)] if i == 0 else ([(600, 690), (780, 840)] if i == trip['days'] - 1 else [(600, 690), (780, 870), (960, 1050)])
         titles = [place1, place2, indoor]
         events = [dict(start=start, end=end, title=titles[j], indoor=j == 2,
-                       cost_cents=1800 if j == 2 else 0, price_source='MOCK', area=area)
+                       cost_cents=1800 if j == 2 else 0, price_source='ESTIMATED', area=area)
                   for j, (start, end) in enumerate(times)]
         if 'art' in trip['interests'] and len(events) > 1:
             events[1].update(title=indoor, indoor=True, cost_cents=1800)

@@ -26,7 +26,7 @@ def run(state):
         if disruption['kind'] == 'rain':
             day['events'] = [dict(start=900 if index == 0 else 600, end=990 if index == 0 else 720,
                                  title=day['indoor_alternative'], indoor=True, cost_cents=1800,
-                                 price_source='MOCK', area=day['area'])]
+                                 price_source='ESTIMATED', area=day['area'])]
             day['note'] = 'Indoor visit replaces outdoor stops. Check opening hours.'
             changes.append(f"Day {index + 1}: outdoor stops replaced with an indoor visit.")
         else:

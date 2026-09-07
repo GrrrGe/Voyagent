@@ -84,6 +84,12 @@ def index():
     page = BASE / 'templates' / 'index.html'
     return page.read_text() if page.exists() else '<h1>Voyagent.</h1><p>Planning API is ready.</p>'
 
+@app.get('/about', response_class=HTMLResponse)
+@app.get('/how-it-works', response_class=HTMLResponse)
+def about():
+    page = BASE / 'templates' / 'about.html'
+    return page.read_text() if page.exists() else '<h1>How it works.</h1><p>Six agents plan your trip.</p>'
+
 @app.get('/health')
 def health():
     return {'status': 'ok', 'storage': app.state.storage,

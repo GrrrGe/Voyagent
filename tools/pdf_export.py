@@ -35,7 +35,7 @@ def build_pdf(plan):
         canvas.line(48, 42, A4[0] - 48, 42)
         canvas.setFont('Helvetica', 8)
         canvas.setFillColor(colors.HexColor('#707070'))
-        canvas.drawString(48, 28, 'VOYAGENT / MOCK COST ESTIMATES / NO BOOKINGS MADE')
+        canvas.drawString(48, 28, 'VOYAGENT / ESTIMATED COSTS / NO BOOKINGS MADE')
         canvas.drawRightString(A4[0] - 48, 28, str(document.page))
         canvas.restoreState()
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

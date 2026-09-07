@@ -20,7 +20,7 @@ def main():
         assert len(result['itinerary']) == days and feasible(result['itinerary'])
         assert sum(item['amount_cents'] for item in result['budget']['items']) == result['budget']['total_cents']
         assert not violations(result['answer'])
-        print(f"PASS {thread}: {message} | USD {result['budget']['total_cents'] / 100:.2f} MOCK")
+        print(f"PASS {thread}: {message} | USD {result['budget']['total_cents'] / 100:.2f} estimated")
     print(f'{len(cases)} evaluations passed.')
 
 if __name__ == '__main__':

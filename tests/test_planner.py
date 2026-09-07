@@ -19,8 +19,8 @@ def test_complete_keyless_trip(graph, destination, origin, days, budget):
     assert feasible(state['itinerary'])
     assert state['itinerary'][0]['events'][0]['start'] >= 900
     assert state['itinerary'][-1]['events'][-1]['end'] <= 840
-    assert state['budget']['price_source'] == 'MOCK'
-    assert 'MOCK' in state['answer']
+    assert state['budget']['price_source'] == 'ESTIMATED'
+    assert 'ESTIMATED' in state['answer'] or 'estimated' in state['answer']
 
 def test_budget_math_and_room_rounding(trip):
     trip['travelers'] = 3
@@ -88,7 +88,8 @@ def test_mock_provider_contracts(trip):
         assert len({item['id'] for item in result}) == len(result)
         for item in result:
             assert type(item[price_key]) is int and item[price_key] > 0
-            assert item['price_source'] == item['data_source'] == 'MOCK'
+            assert item['price_source'] == 'ESTIMATED'
+            assert item['data_source'] == 'CURATED'
     assert MockLanguageProvider().order(trip, 3) == [0, 1, 2]
 
 def test_sqlite_checkpoint_survives_reopen(tmp_path):

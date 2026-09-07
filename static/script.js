@@ -19,28 +19,40 @@ const E = (tag, className = '', text = '') => {
 };
 const append = (parent, ...children) => { parent.append(...children); return parent; };
 const amount = (cents) => new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(cents / 100);
-const cost = (cents, source = 'MOCK') => `${amount(cents)} USD · ${source}`;
+// Backend labels: ESTIMATED prices, CURATED or LIVE research. Older MOCK values map to estimates.
+const label = (source = 'ESTIMATED') => {
+  if (source === 'MOCK') return 'Estimated';
+  if (source === 'CURATED') return 'Curated';
+  if (source === 'LIVE') return 'Live';
+  if (source === 'ESTIMATED') return 'Estimated';
+  return source;
+};
+const cost = (cents, source = 'ESTIMATED') => `${amount(cents)} USD · ${label(source)}`;
 const time = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 const dateLabel = (value) => new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric', year: 'numeric'}).format(new Date(`${value}T12:00:00`));
 function toast(message) {
-  $('toast').textContent = message; $('toast').hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4000);
+  const target = $('toast');
+  if (!target) return;
+  target.textContent = message; target.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { target.hidden = true; }, 4000);
 }
-function route(planner, replace = false) {
-  $('landing').hidden = planner; $('planner').hidden = !planner;
-  document.title = planner ? 'Your trip. Voyagent.' : 'Voyagent. A plan for the places ahead.';
-  const path = planner ? '/planner' : '/';
-  if (location.pathname !== path) history[replace ? 'replaceState' : 'pushState']({}, '', path);
+function scrollToPlanner() {
+  const planner = $('planner');
+  if (planner) planner.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 function setBusy(value, message = 'Six agents are working through your trip. This may take a moment.') {
   busy = value;
   document.querySelectorAll('button[type="submit"], [data-example], [data-replan], #new-trip, #copy-plan, #pdf-plan').forEach(button => { button.disabled = value; });
-  $('status').hidden = !value; $('status').textContent = message;
-  document.querySelector('.results').setAttribute('aria-busy', String(value));
+  const status = $('status');
+  if (status) { status.hidden = !value; status.textContent = message; }
+  const results = document.querySelector('.results');
+  if (results) results.setAttribute('aria-busy', String(value));
 }
 function showError(message) {
-  $('error').textContent = message; $('error').hidden = false;
-  $('error').scrollIntoView({block: 'center', behavior: 'smooth'});
+  const target = $('error');
+  if (!target) return;
+  target.textContent = message; target.hidden = false;
+  target.scrollIntoView({block: 'center', behavior: 'smooth'});
 }
 async function request(url, options = {}) {
   const response = await fetch(url, {credentials: 'same-origin', ...options});
@@ -57,12 +69,14 @@ function saveThread(value) {
 }
 async function submitTrip(message, fresh = false) {
   if (busy) return;
-  route(true); window.scrollTo({top: 0, behavior: 'smooth'});
+  if (!$('planner')) { location.href = `/?message=${encodeURIComponent(message)}`; return; }
+  scrollToPlanner();
   $('error').hidden = true; setBusy(true);
   try {
     const response = await request('/api/travel', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({message, thread_id: fresh ? null : threadId})});
     plan = await response.json(); saveThread(plan.thread_id); renderPlan();
-    $('replan-message').value = '';
+    const replan = $('replan-message');
+    if (replan) replan.value = '';
   } catch (error) { showError(error.message || 'Could not reach the planner. Try again.'); }
   finally { setBusy(false); }
 }
@@ -74,8 +88,8 @@ function tab(name, focus = false) {
     if (active && focus) button.focus();
   });
 }
-function stat(label, value, detail) {
-  return append(E('div', 'stat'), E('span', 'label', label), E('strong', '', value), E('small', '', detail));
+function stat(labelText, value, detail) {
+  return append(E('div', 'stat'), E('span', 'label', labelText), E('strong', '', value), E('small', '', detail));
 }
 function renderOverview() {
   const target = $('panel-overview'); target.replaceChildren();
@@ -85,23 +99,25 @@ function renderOverview() {
   append(target, photo, E('p', 'overview-summary', plan.summary));
   const remaining = plan.budget.remaining_cents;
   append(target, append(E('div', 'stats-grid'),
-    stat('ESTIMATED TOTAL', amount(plan.budget.total_cents), 'USD · MOCK'),
+    stat('ESTIMATED TOTAL', amount(plan.budget.total_cents), 'USD · Estimated'),
     stat('NIGHTS AWAY', String(plan.trip.days - 1), `${plan.selected_hotel.rooms} room(s)`),
-    stat(remaining >= 0 ? 'BELOW YOUR BUDGET' : 'OVER YOUR BUDGET', amount(Math.abs(remaining)), 'USD · MOCK estimate')));
+    stat(remaining >= 0 ? 'BELOW YOUR BUDGET' : 'OVER YOUR BUDGET', amount(Math.abs(remaining)), 'USD · Estimated')));
   const note = E('div', 'card result-card');
-  append(note, E('h4', '', 'The assumptions.'), E('p', '', 'All costs are MOCK estimates in USD. Flights are round trip. Rooms hold two guests. Food, local transport, activities, and a 10% reserve are included. Dates are days at the destination. International travel may require extra days.'), E('p', 'day-note', 'Opening hours, exact transfer times, and availability need confirmation. This is a planning draft, not a booking.'));
+  append(note, E('h4', '', 'The assumptions.'), E('p', '', 'All costs are estimated in USD. Flights are round trip. Rooms hold two guests. Food, local transport, activities, and a 10% reserve are included. Dates are days at the destination. International travel may require extra days.'), E('p', 'day-note', 'Opening hours, exact transfer times, and availability need confirmation. This is a planning draft, not a booking.'));
   target.append(note);
   if (plan.changes.length) target.append(append(E('div', 'card result-card'), E('h4', '', 'What changed.'), ...plan.changes.map(change => E('p', 'change-note', change))));
 }
 function renderFlights() {
   const target = $('panel-flights'); target.replaceChildren();
-  target.append(E('p', 'caption', 'Displayed fares are MOCK allowances. LIVE schedules, when enabled, are route research and may not match your dates.'));
+  target.append(E('p', 'caption', 'Displayed fares are estimated allowances. Live schedules, when enabled, are route research and may not match your dates.'));
   plan.flight_results.forEach(flight => {
     const card = E('article', 'card result-card');
-    append(card, E('div', 'selected-label', `${flight.id === plan.selected_flight.id ? 'IN YOUR PLAN · ' : ''}${flight.data_source} RESEARCH`), E('h4', '', `${flight.airline}.`), E('p', '', `${flight.number} · ${flight.stops === 0 ? 'Nonstop demo allowance' : 'One-stop demo allowance'}`));
+    const research = label(flight.data_source);
+    const stops = flight.stops === 0 ? 'Nonstop reference allowance' : 'One-stop reference allowance';
+    append(card, E('div', 'selected-label', `${flight.id === plan.selected_flight.id ? 'IN YOUR PLAN · ' : ''}${research.toUpperCase()} RESEARCH`), E('h4', '', `${flight.airline}.`), E('p', '', `${flight.number} · ${stops}`));
     const routeLine = E('div', 'route-line');
     append(routeLine, append(E('div'), E('strong', '', flight.origin), E('p', '', plan.trip.origin)), E('span', '', '↗'), append(E('div'), E('strong', '', flight.destination), E('p', '', plan.trip.destination)));
-    append(card, routeLine, E('strong', 'price', amount(flight.price_cents)), E('span', 'price-label', `USD · ${flight.price_source} · ${flight.price_basis}`), E('p', 'day-note', `Outbound departure: ${flight.departure}. Arrival: ${flight.arrival}.`), E('p', 'day-note', flight.note));
+    append(card, routeLine, E('strong', 'price', amount(flight.price_cents)), E('span', 'price-label', `USD · ${label(flight.price_source)} · ${flight.price_basis}`), E('p', 'day-note', `Outbound departure: ${flight.departure}. Arrival: ${flight.arrival}.`), E('p', 'day-note', flight.note));
     target.append(card);
   });
 }
@@ -109,7 +125,7 @@ function renderHotels() {
   const target = $('panel-hotels'); target.replaceChildren();
   plan.hotel_results.forEach(hotel => {
     const card = E('article', 'card result-card');
-    append(card, E('div', 'selected-label', `${hotel.id === plan.selected_hotel.id ? 'IN YOUR PLAN · ' : ''}${hotel.data_source} RESEARCH`), E('h4', '', `${hotel.name.replace(/\.$/, '')}.`), E('p', '', `${hotel.area} · ${hotel.rooms} room(s) · ${plan.trip.days - 1} nights`), E('strong', 'price', amount(hotel.nightly_cents)), E('span', 'price-label', `USD · ${hotel.price_source} · per room per night`), E('p', 'day-note', hotel.note));
+    append(card, E('div', 'selected-label', `${hotel.id === plan.selected_hotel.id ? 'IN YOUR PLAN · ' : ''}${label(hotel.data_source).toUpperCase()} RESEARCH`), E('h4', '', `${hotel.name.replace(/\.$/, '')}.`), E('p', '', `${hotel.area} · ${hotel.rooms} room(s) · ${plan.trip.days - 1} nights`), E('strong', 'price', amount(hotel.nightly_cents)), E('span', 'price-label', `USD · ${label(hotel.price_source)} · per room per night`), E('p', 'day-note', hotel.note));
     if (hotel.url) {
       try {
         const url = new URL(hotel.url);
@@ -134,12 +150,12 @@ function renderItinerary() {
 function renderBudget() {
   const target = $('panel-budget'); target.replaceChildren();
   const budget = plan.budget; const card = E('article', 'card result-card');
-  append(card, E('p', 'eyebrow', 'ALL TRAVELERS. ALL TRIP DAYS.'), E('h3', '', 'The numbers.'), E('div', 'budget-total', amount(budget.total_cents)), E('span', 'price-label', 'USD · MOCK ESTIMATE'));
+  append(card, E('p', 'eyebrow', 'ALL TRAVELERS. ALL TRIP DAYS.'), E('h3', '', 'The numbers.'), E('div', 'budget-total', amount(budget.total_cents)), E('span', 'price-label', 'USD · ESTIMATED TOTAL'));
   const meter = E('meter', 'budget-meter'); meter.min = 0; meter.max = Math.max(budget.limit_cents, budget.total_cents); meter.value = budget.total_cents; meter.setAttribute('aria-label', `Estimated spend ${amount(budget.total_cents)}. Budget ${amount(budget.limit_cents)}.`); card.append(meter);
-  card.append(E('p', budget.within_budget ? 'budget-status saving' : 'budget-status', `${amount(Math.abs(budget.remaining_cents))} USD ${budget.within_budget ? 'below' : 'over'} your budget. MOCK estimate.`));
-  budget.items.forEach(item => card.append(append(E('div', 'budget-row'), E('span', '', item.category), append(E('span'), E('strong', '', amount(item.amount_cents)), E('small', '', item.price_source)))));
+  card.append(E('p', budget.within_budget ? 'budget-status saving' : 'budget-status', `${amount(Math.abs(budget.remaining_cents))} USD ${budget.within_budget ? 'below' : 'over'} your budget. Estimated total.`));
+  budget.items.forEach(item => card.append(append(E('div', 'budget-row'), E('span', '', item.category), append(E('span'), E('strong', '', amount(item.amount_cents)), E('small', '', label(item.price_source))))));
   if (budget.savings_cents) card.append(E('p', 'saving', `${cost(budget.savings_cents)} saved by replacing paid visits.`));
-  append(card, E('p', 'day-note', 'Hotel estimate includes taxes. Food is $35.00 USD MOCK per person per day. Local transport is $12.00 USD MOCK per person per day. The reserve is 10% of all other costs, rounded up to a cent.'), E('p', 'day-note', 'Visa fees, insurance, shopping, and transport to your departure airport are excluded.'));
+  append(card, E('p', 'day-note', 'Hotel estimate includes taxes. Food is $35.00 USD estimated per person per day. Local transport is $12.00 USD estimated per person per day. The reserve is 10% of all other costs, rounded up to a cent.'), E('p', 'day-note', 'Visa fees, insurance, shopping, and transport to your departure airport are excluded.'));
   target.append(card);
 }
 function renderPlan() {
@@ -154,12 +170,16 @@ function renderPlan() {
   $('travelers').value = plan.trip.travelers; $('budget').value = plan.trip.budget_cents / 100; $('start-date').value = plan.trip.start_date;
   tab('overview');
 }
-$('hero-form').addEventListener('submit', event => { event.preventDefault(); submitTrip($('trip-message').value, true); });
-$('planner-form').addEventListener('submit', event => {
+function bind(id, handler) {
+  const element = $(id);
+  if (element) element.addEventListener('submit', handler);
+}
+bind('hero-form', event => { event.preventDefault(); submitTrip($('trip-message').value, true); });
+bind('planner-form', event => {
   event.preventDefault();
   submitTrip(`Plan ${$('days').value} days in ${$('destination').value} from ${$('origin').value} on ${$('start-date').value} for ${$('travelers').value} travelers under $${$('budget').value}, with ${$('interests').value}.`);
 });
-$('replan-form').addEventListener('submit', event => { event.preventDefault(); submitTrip($('replan-message').value); });
+bind('replan-form', event => { event.preventDefault(); submitTrip($('replan-message').value); });
 document.querySelectorAll('[data-example]').forEach(button => button.addEventListener('click', () => submitTrip(examples[button.dataset.example], true)));
 document.querySelectorAll('[data-replan]').forEach(button => button.addEventListener('click', () => submitTrip(button.dataset.replan)));
 document.querySelectorAll('[data-tab]').forEach(button => {
@@ -174,16 +194,19 @@ document.querySelectorAll('[data-tab]').forEach(button => {
     event.preventDefault(); tab(tabs[index].dataset.tab, true);
   });
 });
-$('new-trip').addEventListener('click', () => {
+const newTrip = $('new-trip');
+if (newTrip) newTrip.addEventListener('click', () => {
   saveThread(null); plan = null; $('plan-content').hidden = true; $('empty-state').hidden = false; $('error').hidden = true;
   $('planner-form').reset(); setDefaultDate(); $('destination').focus(); toast('A new trip is ready to plan.');
 });
-$('copy-plan').addEventListener('click', async () => {
+const copyPlan = $('copy-plan');
+if (copyPlan) copyPlan.addEventListener('click', async () => {
   if (!plan) return;
   try { await navigator.clipboard.writeText(plan.answer); toast('Trip plan copied.'); }
   catch { showError('Clipboard access is unavailable. Export a PDF to save your plan.'); }
 });
-$('pdf-plan').addEventListener('click', async () => {
+const pdfPlan = $('pdf-plan');
+if (pdfPlan) pdfPlan.addEventListener('click', async () => {
   if (!plan || busy) return;
   const button = $('pdf-plan'); button.disabled = true; button.textContent = 'Preparing PDF';
   try {
@@ -194,20 +217,41 @@ $('pdf-plan').addEventListener('click', async () => {
   finally { button.disabled = false; button.textContent = 'Export PDF ↗'; }
 });
 function setDefaultDate() {
+  const picker = $('start-date');
+  if (!picker) return;
   const localISO = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const today = new Date(); $('start-date').min = localISO(today); today.setDate(today.getDate() + 30); $('start-date').value = localISO(today);
+  const today = new Date(); picker.min = localISO(today); today.setDate(today.getDate() + 30); picker.value = localISO(today);
 }
-window.addEventListener('popstate', () => route(location.pathname === '/planner', true));
 async function init() {
-  setDefaultDate(); route(location.pathname === '/planner', true);
+  if (!$('planner')) return;
+  setDefaultDate();
+  const params = new URLSearchParams(location.search);
+  const example = params.get('example');
+  if (example && examples[example]) {
+    history.replaceState({}, '', location.pathname);
+    submitTrip(examples[example], true);
+    return;
+  }
+  const shared = params.get('message');
+  if (shared) {
+    history.replaceState({}, '', location.pathname);
+    const hero = $('trip-message');
+    if (hero) hero.value = shared;
+    submitTrip(shared, true);
+    return;
+  }
   request('/health').then(response => response.json()).then(health => {
+    const note = $('provider-note');
+    if (!note) return;
     const live = Object.entries(health.providers).filter(([, mode]) => mode === 'LIVE').map(([name]) => name);
-    if (live.length) $('provider-note').textContent = `LIVE research: ${live.join(', ')}. Unverified price allowances stay MOCK.`;
-  }).catch(() => { $('provider-note').textContent = 'Planner connection unavailable. Try again shortly.'; });
-  if (threadId && location.pathname === '/planner') {
+    if (health.language_provider === 'openai') note.textContent = 'AI-powered by OpenAI. Costs are estimated allowances.';
+    else if (live.length) note.textContent = `Live research: ${live.join(', ')}. Price allowances stay estimated.`;
+    else note.textContent = 'AI-powered planning. Costs are estimates.';
+  }).catch(() => { const note = $('provider-note'); if (note) note.textContent = 'Planner connection unavailable. Try again shortly.'; });
+  if (threadId) {
     setBusy(true, 'Opening your saved trip.');
     try { plan = await (await request(`/api/travel/${threadId}`)).json(); renderPlan(); }
-    catch (error) { if (error.status === 404 || error.status === 422) saveThread(null); showError(error.message); }
+    catch (error) { if (error.status === 404 || error.status === 422) saveThread(null); }
     finally { setBusy(false); }
   }
 }

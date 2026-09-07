@@ -2,14 +2,14 @@ import os
 from tools.language_tool import provider, is_live
 
 def money(cents):
-    return f'USD {cents / 100:,.2f} MOCK'
+    return f'USD {cents / 100:,.2f} estimated'
 
 def run(state):
     trip, budget = state['trip'], state['budget']
     summary = provider().report(state)
     lines = [f"{trip['destination']}. Your trip plan.", summary,
              f"{trip['origin']} to {trip['destination']} | {trip['start_date']} to {trip['end_date']} | {trip['travelers']} traveler(s)",
-             'All costs are MOCK planning estimates, not bookable quotes.',
+             'All costs are estimated planning figures, not bookable quotes.',
              'Flights.', f"{state['selected_flight']['airline']}: {money(state['selected_flight']['price_cents'])} per person, round trip.",
              f"{state['selected_flight']['data_source']} flight research. {state['selected_flight']['note']}",
              'Hotels.', f"{state['selected_hotel']['name']}: {money(state['selected_hotel']['nightly_cents'])} per room per night.",

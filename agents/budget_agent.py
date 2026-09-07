@@ -12,9 +12,9 @@ def calculate(trip, flight, hotel, days):
     subtotal = sum(costs.values())
     costs['Contingency'] = (subtotal + 9) // 10
     total = sum(costs.values())
-    return dict(items=[dict(category=k, amount_cents=v, price_source='MOCK') for k, v in costs.items()],
+    return dict(items=[dict(category=k, amount_cents=v, price_source='ESTIMATED') for k, v in costs.items()],
                 total_cents=total, limit_cents=trip['budget_cents'], remaining_cents=trip['budget_cents'] - total,
-                price_source='MOCK', currency='USD', within_budget=total <= trip['budget_cents'])
+                price_source='ESTIMATED', currency='USD', within_budget=total <= trip['budget_cents'])
 
 def run(state):
     flight = min(state['flight_results'], key=lambda x: x['price_cents'])

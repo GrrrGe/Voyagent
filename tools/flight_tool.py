@@ -13,7 +13,7 @@ class AviationStackProvider:
         if payload.get('error'):
             raise ValueError('Flight provider rejected the request.')
         rows = payload.get('data', [])
-        # AviationStack does not sell fares. The budget estimate stays MOCK.
+        # AviationStack does not sell fares. The budget estimate stays estimated.
         estimate = MockFlightProvider().search(trip)[0]
         return [dict(estimate, id=f'live-flight-{i}',
                      airline=clean_output((row.get('airline') or {}).get('name') or 'Carrier'),
@@ -21,7 +21,7 @@ class AviationStackProvider:
                      departure=(row.get('departure') or {}).get('scheduled') or 'Unpublished',
                      arrival=(row.get('arrival') or {}).get('scheduled') or 'Unpublished',
                      data_source='LIVE',
-                     note='LIVE recent route research, not date-specific availability. Fare and itinerary timing remain MOCK assumptions.')
+                     note='LIVE recent route research, not date-specific availability. Fare and itinerary timing remain estimated assumptions.')
                 for i, row in enumerate(rows[:3])]
 
 def provider():

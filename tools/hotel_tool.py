@@ -13,7 +13,7 @@ class TavilyHotelProvider:
         estimate = MockHotelProvider().search(trip)[0]
         return [dict(estimate, id=f'live-hotel-{i}', name=clean_output(row['title'])[:120],
                      data_source='LIVE', url=row.get('url'),
-                     note='LIVE web research. Nightly cost is a MOCK allowance. Rooms and rates are not verified.')
+                     note='LIVE web research. Nightly cost is an estimated allowance. Rooms and rates are not verified.')
                 for i, row in enumerate(rows)]
 
 def provider():

@@ -12,7 +12,7 @@ def main():
             except httpx.HTTPError:
                 if attempt == 29: raise
                 time.sleep(1)
-        for path in ['/', '/planner', '/static/style.css', '/static/script.js', '/static/images/tokyo.jpg', '/static/images/lisbon.jpg', '/static/images/paris.jpg', '/static/fonts/InterVariable.woff2']:
+        for path in ['/', '/planner', '/about', '/how-it-works', '/static/style.css', '/static/script.js', '/static/images/tokyo.jpg', '/static/images/lisbon.jpg', '/static/images/paris.jpg', '/static/fonts/InterVariable.woff2']:
             client.get(path).raise_for_status()
         for destination, origin, days, budget in [('Tokyo', 'San Francisco', 7, 2500), ('Lisbon', 'New York', 5, 1800), ('Paris', 'Toronto', 4, 1600)]:
             response = client.post('/api/travel', json={'message': f'{days} days in {destination} from {origin} under ${budget}'})

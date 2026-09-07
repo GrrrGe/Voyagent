@@ -18,18 +18,18 @@ class MockFlightProvider:
         return [dict(id=f'flight-{i}', airline=name, number=f'VG{210 + i}',
                      origin=trip['origin_iata'], destination=trip['destination_iata'],
                      departure='09:00', arrival='12:00', return_departure='18:00',
-                     stops=i, price_cents=fare + i * 8500, price_source='MOCK',
-                     data_source='MOCK', price_basis='Round trip, per person',
-                     note='Demo schedule. Times are local. Availability is not checked.')
+                     stops=i, price_cents=fare + i * 8500, price_source='ESTIMATED',
+                     data_source='CURATED', price_basis='Round trip, per person',
+                     note='Reference schedule. Times are local. Availability is not checked.')
                 for i, name in enumerate(['Voyagent Air', 'Demo Airways'])]
 
 class MockHotelProvider:
     def search(self, trip):
         city = CITIES[trip['destination']]
         return [dict(id=f'hotel-{i}', name=name, area=city['area'],
-                     nightly_cents=city['night'] + i * 3500, price_source='MOCK',
-                     data_source='MOCK', rooms=(trip['travelers'] + 1) // 2,
-                     note='Demo lodging. Two guests per room. Taxes included in estimate.', url=None)
+                     nightly_cents=city['night'] + i * 3500, price_source='ESTIMATED',
+                     data_source='CURATED', rooms=(trip['travelers'] + 1) // 2,
+                     note='Curated lodging. Two guests per room. Taxes included in estimate.', url=None)
                 for i, name in enumerate([city['stay'], f"{city['area']} Courtyard"])]
 
 class MockLanguageProvider:

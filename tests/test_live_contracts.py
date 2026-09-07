@@ -13,14 +13,14 @@ def test_live_flight_never_claims_live_fare(monkeypatch, trip):
     monkeypatch.setenv('AVIATIONSTACK_API_KEY', 'test')
     monkeypatch.setattr(httpx, 'get', lambda *a, **k: response({'data': [{'airline': {'name': 'Carrier'}, 'flight': {'iata': 'AA10'}, 'departure': {'scheduled': '2030-10-01T09:00'}, 'arrival': {'scheduled': '2030-10-01T12:00'}}]}))
     flight = AviationStackProvider().search(trip)[0]
-    assert flight['data_source'] == 'LIVE' and flight['price_source'] == 'MOCK'
+    assert flight['data_source'] == 'LIVE' and flight['price_source'] == 'ESTIMATED'
     assert flight['price_cents'] == 68000
 
 def test_tavily_is_research_not_verified_rate(monkeypatch, trip):
     monkeypatch.setenv('TAVILY_API_KEY', 'test')
     monkeypatch.setattr(httpx, 'post', lambda *a, **k: response({'results': [{'title': 'Hotel source', 'url': 'https://hotel.example'}]}))
     hotel = TavilyHotelProvider().search(trip)[0]
-    assert hotel['data_source'] == 'LIVE' and hotel['price_source'] == 'MOCK'
+    assert hotel['data_source'] == 'LIVE' and hotel['price_source'] == 'ESTIMATED'
     assert hotel['url'].startswith('https://')
 
 @pytest.mark.parametrize('result', [{'order': [1, 1]}, {'order': 'wrong'}, {'order': [True, 0]}])

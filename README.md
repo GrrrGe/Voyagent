@@ -1,206 +1,148 @@
 # Voyagent.
 
-An original six-agent travel planner with a Python API and a no-build interface with color photography and sage, peach, and lavender accents. It runs complete trips without API keys. No source code from the functional reference was copied.
+### A six-agent travel planner built with LangGraph and FastAPI.
 
-## Start locally.
+Turn a trip request into flight research, hotel options, a daily itinerary, and a checked budget. Continue the same conversation to change the trip or plan around rain, flight delays, and cancellations.
 
-Requires Python 3.12. Dependencies are pinned in `requirements.lock`.
+[![Verify planner](https://github.com/GrrrGe/Voyagent/actions/workflows/ci.yml/badge.svg)](https://github.com/GrrrGe/Voyagent/actions/workflows/ci.yml)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-245b48)
+![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
+
+**[Setup and provider guide](docs/guide.md) · [API examples](#api) · [Deployment](#deployment)**
+
+## What it does.
+
+- Runs six sequential agents in a real LangGraph `StateGraph`.
+- Produces Overview, Flights, Hotels, Itinerary, and Budget tabs.
+- Saves conversation checkpoints in PostgreSQL, with SQLite for local development.
+- Replans affected days for rain, flight delays, or cancellations.
+- Calculates costs in integer cents, includes a 10% reserve, and flags budget shortfalls.
+- Supports curated local fixtures for offline development and opt-in OpenAI, Groq, AviationStack, and Tavily adapters.
+- Exports the complete plan as text or a paginated PDF.
+- Serves a responsive HTML, CSS, and JavaScript frontend without a build step.
+
+<p>
+  <img src="static/images/tokyo.jpg" width="32%" alt="Tokyo cityscape">
+  <img src="static/images/lisbon.jpg" width="32%" alt="Lisbon cityscape">
+  <img src="static/images/paris.jpg" width="32%" alt="Paris cityscape">
+</p>
+
+## Architecture.
+
+```mermaid
+flowchart LR
+    A[Trip request] --> B[Flight research]
+    B --> C[Hotel research]
+    C --> D[Itinerary]
+    D --> E[Disruption replan]
+    E --> F[Budget check]
+    F --> G[Report]
+    G --> H[Tabbed plan and PDF]
+    P[(PostgreSQL or SQLite)] -. Checkpoints per thread .-> D
+```
+
+| Layer | Implementation |
+| --- | --- |
+| API | FastAPI, Pydantic validation, Uvicorn |
+| Orchestration | LangGraph `StateGraph`, six typed-state nodes |
+| Conversation state | PostgreSQL or SQLite checkpoints, browser session isolation |
+| Language models | OpenAI Responses API with strict JSON schemas, or Groq |
+| Travel research | AviationStack route observations and Tavily hotel search |
+| Cost model | Deterministic fixtures, integer-cent arithmetic, budget adjustment |
+| Frontend | Vanilla JavaScript, Inter, responsive CSS, accessible tabs |
+| Export | ReportLab PDF generation |
+| Quality | pytest, graph evaluations, copy lint, HTTP smoke checks, GitHub Actions |
+
+The provider interfaces separate the graph from external services. The keyless demo follows the same pipeline as the live adapters. A failed provider call preserves the last completed plan instead of replacing it with a partial result.
+
+## Run locally.
+
+Requires Python 3.12.
 
 ```sh
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock
 cp .env.example .env
+```
+
+For keyless local development, set `LLM_PROVIDER=mock` in `.env`. For the live AI plan, set `LLM_PROVIDER=openai` with `OPENAI_API_KEY`:
+
+```sh
 uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-With uv, use `uv venv --python 3.12` and `uv pip sync requirements.lock` instead of pip.
+Open [localhost:8000](http://127.0.0.1:8000). The home page is the trip planner. `/about` explains how it works. No database server or frontend build tools are needed. Dependencies, fonts, and photos are served locally after setup.
 
-Open http://127.0.0.1:8000. The landing page has trip examples. `/planner` has the form and Overview, Flights, Hotels, Itinerary, and Budget tabs. Fonts and photos are served locally. There is no frontend build step and no runtime CDN requirement.
+## Try a trip.
 
-The first run creates `.data/checkpoints.sqlite` and a local session signing secret. SQLite checkpoints survive restarts. The browser stores the public `thread_id` in localStorage and an HttpOnly, SameSite signed session cookie. Both are needed to reopen a trip. Clearing cookies removes access to that browser's saved trips. The New trip button starts a new conversation; it does not delete prior database records.
-
-## Three keyless trips.
-
-Use these in the landing input or select the corresponding sample. Dates default to 30 days from today unless an ISO date is provided.
-
-1. `Plan 7 days in Tokyo from San Francisco under $2500 for 1 traveler, with food and walking.` Estimated total: **$1,948.10 USD MOCK**.
-2. `Plan 5 days in Lisbon from New York under $1800 for 1 traveler, with history and walking.` Estimated total: **$1,281.50 USD MOCK**.
-3. `Plan 4 days in Paris from Toronto under $1600 for 1 traveler, with art and history.` Estimated total: **$1,272.70 USD MOCK**.
-
-Supported demo destinations are Tokyo, Lisbon, and Paris. Origins are San Francisco, New York, Toronto, London, Chennai, and the three destination cities. Use 2 to 14 days, 1 to 8 travelers, USD budgets from $100 to $100,000, and dates today or later. The form makes these inputs explicit. The deterministic parser recognizes these fields, ISO dates, and food, art, history, or walking interests. It is not an unrestricted natural-language assistant. Other currencies are rejected rather than silently converted. Extend `tools/catalog.py` and parser tests to add destinations.
-
-Examples of follow-ups in the same trip:
-
-```text
-Make it 5 days under $1800
-Plan for rain on day 2
-My flight has a 4 hour delay on day 1
-My flight was cancelled on day 1
-Clear disruption
-```
-
-Rain replaces the day's outdoor stops with one indoor visit. Delay scenarios remove activities before the revised travel window. Cancellation assumes a 24-hour travel interruption. These are user-triggered scenarios, not live disruption alerts. The planner never rebooks flights. Saved disruptions persist through budget changes until cleared. Every replan rebuilds the schedule and recalculates the costs. Invalid changes and provider failures preserve the last completed plan.
-
-## Pipeline and files.
-
-`backend.py` compiles a real LangGraph `StateGraph`:
-
-```text
-START -> research -> booking -> itinerary_agent
-      -> disruption_agent -> budget_agent -> report_agent -> END
-```
-
-| File | Responsibility |
+| Request | Estimated total |
 | --- | --- |
-| `app.py` | FastAPI routes, application lifespan, checkpoint connection, browser session boundary |
-| `backend.py` | Typed state and six sequential agent nodes |
-| `agents/research.py` | Normalize trip details and research flights |
-| `agents/booking.py` | Research hotel options, no purchases |
-| `agents/itinerary.py` | Schedule local activity groups, validate timing |
-| `agents/disruption.py` | Apply rain, flight delay, or cancellation scenarios |
-| `agents/budget_agent.py` | Select lowest estimated costs, integer-cent totals and budget adjustment |
-| `agents/report.py` | Produce the summary and exportable full report |
-| `tools/flight_tool.py` | AviationStack adapter selected only by an explicit flag |
-| `tools/hotel_tool.py` | Tavily adapter selected only by an explicit flag |
-| `tools/mock_providers.py` | Provider protocols and deterministic default implementations |
-| `tools/language_tool.py` | Groq and OpenAI adapters, JSON contracts and copy validation |
-| `tools/pdf_export.py` | Paginated PDF output from the saved plan |
-| `security.py` | Configuration checks, session secret, thread scoping, rate limiter |
-| `eval.py` | Six keyless graph evaluation cases |
-| `templates/index.html` | Landing and planner document |
-| `static/style.css` | Design tokens, responsive layout, print-independent UI |
-| `static/script.js` | API requests, localStorage continuity, tabs, copy, PDF download |
-| `scripts/lint_copy.py` | Copy policy gate for frontend, templates, prompts, and agent copy |
+| 7 days in Tokyo from San Francisco under $2500, with food and walking | $1,948.10 USD estimated |
+| 5 days in Lisbon from New York under $1800, with history and walking | $1,281.50 USD estimated |
+| 4 days in Paris from Toronto under $1600, with art and history | $1,272.70 USD estimated |
 
-Each agent's successful completion appears in `trace`. Loading text does not claim that individual agents have completed before the server responds. `llm_calls` is zero in mock mode and two with Groq or OpenAI enabled.
+These examples use one traveler and default to 30 days from today. Then try `Rain on day 2`, `My flight has a 4 hour delay on day 1`, or `Make it 5 days under $1800` in the same conversation.
 
-## Prices and feasibility.
+The demo supports Tokyo, Lisbon, and Paris, trips of 2 to 14 days, and 1 to 8 travelers. The deterministic parser handles supported fields rather than unrestricted travel requests.
 
-Every provider object has separate `data_source` and `price_source` fields. **All monetary estimates in this implementation remain MOCK**, even if the related research is LIVE. AviationStack supplies route schedules, not fares. Tavily supplies web research, not guaranteed room inventory. Neither is presented as a booking quote. There are no payment or booking operations.
+<a id="api"></a>
+## API.
 
-Mock costs use integer cents. Round-trip fares are per traveler. Hotel costs are per room per night with two guests per room, rounded up. Nights equal destination days minus one. Food is $35 USD MOCK per person per day, transport is $12 USD MOCK per person per day, and paid visits are $18 USD MOCK per person. A reserve equals 10% of the subtotal, rounded up to the next cent. Sample hotel allowances include taxes. Visa fees, insurance, shopping, and origin-airport transfers are excluded.
-
-The budget agent first uses the least expensive available fixture. If the total is too high, it replaces paid visits with no-cost stops and recalculates. If it is still over budget, it says so and keeps the shortfall visible. It does not invent lower fares or room rates.
-
-The feasibility check enforces ordered, nonoverlapping visits, at least 30 minutes between stops, and an 08:00 to 21:00 activity window. The first visit is after 15:00 on arrival day. The last day ends by 14:00 for an assumed 18:00 return departure. Days represent time at the destination, not total international travel duration. Opening hours, flight date availability, exact transfer times, timezone crossings, and accessibility are not verified. Trips longer than the local area inventory revisit areas. These assumptions are also shown in the plan.
-
-## API and curl.
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/travel` | Create or continue a trip using `{message, thread_id}` |
+| `GET` | `/api/travel/{thread_id}` | Restore a completed trip within the browser session |
+| `GET` | `/api/travel/{thread_id}/pdf` | Download the saved plan |
+| `GET` | `/health` | Check storage and provider modes |
 
 ```sh
-curl --fail http://127.0.0.1:8000/health
-
 curl --fail -c cookies.txt -b cookies.txt \
   -H 'Content-Type: application/json' \
   -d '{"message":"7 days in Tokyo from San Francisco under $2500","thread_id":null}' \
   http://127.0.0.1:8000/api/travel
 ```
 
-The response contains `thread_id`, `answer`, `trip`, `flight_results`, `hotel_results`, `itinerary`, `budget`, `selected_flight`, `selected_hotel`, `disruption`, `changes`, `trace`, `summary`, `llm_calls`, and `complete`. Copy the returned UUID into the next requests:
+Reuse the returned `thread_id` and the same cookie jar for follow-ups. The response includes the itinerary, research results, budget breakdown, agent trace, full report, and provider labels.
 
-```sh
-curl --fail -c cookies.txt -b cookies.txt \
-  -H 'Content-Type: application/json' \
-  -d '{"message":"Rain on day 2","thread_id":"RETURNED_UUID"}' \
-  http://127.0.0.1:8000/api/travel
-
-curl --fail -b cookies.txt \
-  http://127.0.0.1:8000/api/travel/RETURNED_UUID
-
-curl --fail -b cookies.txt \
-  http://127.0.0.1:8000/api/travel/RETURNED_UUID/pdf \
-  -o trip.pdf
-```
-
-`GET /health` returns storage mode and each provider's MOCK or LIVE mode. It does not make billable provider calls. Requests with invalid fields return 422. Rate limits return 429. External request failures return 502. Saved trips outside the current session return 404. Use the same cookie jar for all calls in a conversation.
-
-## Enable live research.
-
-Defaults stay MOCK even if keys exist. Set the matching flag to `live` in `.env`, then restart:
-
-```dotenv
-FLIGHT_PROVIDER=live
-AVIATIONSTACK_API_KEY=your_key
-HOTEL_PROVIDER=live
-TAVILY_API_KEY=your_key
-LLM_PROVIDER=live
-GROQ_API_KEY=your_key
-GROQ_MODEL=llama-3.3-70b-versatile
-```
-
-Flags can be enabled independently. Missing keys fail startup. Live failures do not silently switch to mock providers. AviationStack uses HTTPS with a 20-second timeout and searches recent route observations. Future schedule inventory can require a different paid endpoint; this app does not claim those observations match the requested dates. Tavily returns hotel research titles and source URLs with MOCK lodging allowances. Groq orders the supplied local area groups and writes a constrained report. The itinerary schema requires a valid permutation; report output must pass the same copy policy as authored content. Malformed output fails the request.
-
-No live calls are made by the default demo, tests, or CI. Live adapters are tested using stubbed HTTP responses. Credentials, availability, and quota behavior need verification in your own provider accounts.
-
-## Use your OpenAI project.
-
-Set these server-side values in `.env`, or in the Render service environment. Do not paste secrets into the browser trip form.
-
-```dotenv
-LLM_PROVIDER=openai
-OPENAI_API_KEY=your_existing_project_key
-OPENAI_PROJECT_ID=your_existing_project_id
-OPENAI_MODEL=gpt-4.1-mini
-```
-
-`OPENAI_PROJECT_ID` is optional for a project-scoped key. When set, it is sent as the `OpenAI-Project` request header. This selects an existing OpenAI project; it does not create an OpenAI project. The key must have access to that project and model. The server sends two constrained Responses API calls per trip, with strict JSON schemas, an output-token cap, a 30-second timeout, and `store: false`. Incomplete responses, refusals, and invalid copy fail the request. Flight and hotel prices stay MOCK unless a verified fare provider is added.
-
-OpenAI support is covered by stubbed HTTP contract tests. A live call requires your actual server-side key. The mock default remains available without keys.
-
-## PostgreSQL checkpoints.
-
-Set `DATABASE_URL` to a psycopg-compatible PostgreSQL URI. On startup, `PostgresSaver.setup()` creates the LangGraph checkpoint schema, so the configured database user needs schema creation rights for the first deployment. Each graph step is checkpointed. The internal thread key hashes the signed browser session ID with the public UUID to prevent cross-session retrieval.
-
-```dotenv
-DATABASE_URL=postgresql://user:password@host:5432/voyagent?sslmode=require
-SESSION_SECRET=replace_with_a_stable_random_value_of_at_least_32_characters
-```
-
-SQLite is the local default. Set a persistent `DATA_DIR` when using SQLite in a container. Keep `SESSION_SECRET` stable across restarts and replicas. There is no account recovery or cross-device identity feature. Checkpoint history stores trip details; use database retention and backups appropriate for your deployment.
-
-## Tests and checks.
+## Testing.
 
 ```sh
 python scripts/lint_copy.py
 pytest -q
 python eval.py
-# Start the app in another terminal before the HTTP smoke check.
+# With the app running:
 python scripts/smoke.py
 ```
 
-The suite checks schedule feasibility, budget totals, room rounding, provider contracts, live data provenance, disruption changes, state restoration, SQLite persistence, browser session isolation, input bounds, request rate limits, HTTP endpoints, PDF output, and copy rules. The optional Postgres reconnect test requires `TEST_DATABASE_URL`; CI provisions Postgres and runs it. Browser interaction tests are not included.
+CI runs the test suite against a PostgreSQL service, six graph evaluation cases, the copy linter, and HTTP smoke checks for all three demo trips. Tests cover feasibility, budget math, provider contracts, replanning, persistence, session isolation, input bounds, and PDF export. OpenAI and other external providers use stubbed HTTP responses in tests.
 
-`lint_copy.py` scans first-party HTML, JS, CSS, SVG, JSON, prompt text, and backend copy for prohibited words and Unicode dash characters. Only the policy definition file and third-party font license are excluded. The workflow runs the linter as its own required job step. A test inserts prohibited copy into temporary frontend and prompt files to verify that the scanner fails.
+## Data labels and scope.
 
-## Deploy.
+All monetary figures are **estimated** allowances, including when related route or hotel research is **LIVE**. AviationStack does not provide ticket fares, and Tavily results do not verify room inventory. The app makes no bookings.
 
-The app requires a Python process. A static host or a JavaScript-only Worker cannot run this backend.
+The planner checks activity overlap, transfer gaps, arrival windows, and budget arithmetic. It does not verify opening hours, exact travel times, visa requirements, or availability. Flight changes are user-entered scenarios, not live alerts. These limits are shown in the plan.
 
-**Render:** push this directory as a repository, create a Blueprint from `render.yaml`, and review the generated web service and database resources. Hosting may incur charges. The blueprint keeps providers in MOCK mode, generates a session secret, and connects PostgreSQL. `/health` is the readiness endpoint. No deployment has been performed by the local setup.
+<a id="deployment"></a>
+## Deployment.
 
-**Docker:**
+[Deploy on Render](https://render.com/deploy?repo=https://github.com/GrrrGe/Voyagent)
 
-```sh
-docker build -t voyagent .
-docker run --rm -p 8000:8000 --env-file .env -v voyagent-data:/app/.data voyagent
-```
+The checked-in `render.yaml` defines a Voyagent project with a Python web service and PostgreSQL database. It selects free plans, generates a session secret, sets `LLM_PROVIDER=openai`, and connects PostgreSQL. Set `OPENAI_API_KEY` in the Render dashboard after the first deploy. Review the platform's current free-plan limits before deployment.
 
-Use `APP_ENV=production` behind HTTPS to require Secure cookies and a configured session secret. Keep the service behind a reverse proxy with a request-size limit. Do not put keys in frontend code or commit `.env`. The API uses a 16 KB body cap, a 2,000-character message limit, a 20-request-per-minute per-IP limiter, same-origin checks, CSP, and escaped DOM/PDF rendering. Run **one worker**: in-process serialization protects same-thread updates, and rate limits are process-local. Distributed locks and a shared limiter are needed before horizontal scaling. No arbitrary code execution or URL fetching from user text is supported.
+To enable OpenAI, set `LLM_PROVIDER=openai` and `OPENAI_API_KEY` in the server environment. Optionally set `OPENAI_PROJECT_ID` and `OPENAI_MODEL`. Render deploys use these values from the service environment. Keys are never placed in the frontend. See the [provider and deployment guide](docs/guide.md) for all flags, Docker instructions, and production constraints.
 
-## Design and sources.
+## Implementation notes.
 
-The requested Mobbin-inspired system uses Inter, white, sage, peach, and lavender surfaces, a forest-green footer, pill controls, 16px inputs and media, 24px cards, no shadows, and blue savings and Popular badges. Every headline ends with a period. All three travel photos are local full-color copies from Unsplash; source URLs are below. Inter is included under the SIL Open Font License in `static/fonts/LICENSE.txt`.
+- **State continuity:** each agent checkpoints its state, and session-scoped thread identifiers prevent cross-browser access to saved trips.
+- **Budget correctness:** totals use integer cents and include per-person fares, room counts, nights, activities, and reserve rounding.
+- **Failure handling:** invalid replans and provider failures restore the previous completed plan.
+- **Constrained generation:** live language output is schema-checked and copy-validated before it enters the plan.
+- **Reproducibility:** pinned dependencies and keyless fixtures support local development and automated evaluation.
 
-Functional architecture reference, consulted for the API contract and agent roles only:
-https://github.com/Karthiksaran-001/Multi-Agent-Travel-Planner
+## Credits.
 
-Provider documentation:
-- https://docs.langchain.com/oss/python/langgraph/persistence
-- https://aviationstack.com/documentation
-- https://docs.tavily.com/documentation/api-reference/endpoint/search
-- https://console.groq.com/docs/api-reference
+Original implementation inspired by the functional architecture of [Multi-Agent-Travel-Planner](https://github.com/Karthiksaran-001/Multi-Agent-Travel-Planner). No source code was copied from that project.
 
-Image sources:
-- Tokyo: https://images.unsplash.com/photo-1540959733332-eab4deabeeaf
-- Lisbon: https://images.unsplash.com/photo-1555881400-74d7acaacd8b
-- Paris: https://images.unsplash.com/photo-1502602898657-3e91760cbb34
+Inter is distributed under its [SIL Open Font License](static/fonts/LICENSE.txt). Travel images are from Unsplash: [Tokyo](https://images.unsplash.com/photo-1540959733332-eab4deabeeaf), [Lisbon](https://images.unsplash.com/photo-1555881400-74d7acaacd8b), and [Paris](https://images.unsplash.com/photo-1502602898657-3e91760cbb34).

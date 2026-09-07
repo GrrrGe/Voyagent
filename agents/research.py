@@ -23,7 +23,7 @@ def parse_trip(message, previous=None):
         trip['destination'] = mentioned[0]
     explicit_destination = re.search(r'\b(?:to|in|visit)\s+([a-z]+)(?:\s+(?:for|trip|on|under|from)\b|\s*$)', text)
     if explicit_destination and explicit_destination[1].title() not in CITIES:
-        raise ValueError('This demo supports Tokyo, Lisbon, and Paris. Choose one destination.')
+        raise ValueError('Currently supports Tokyo, Lisbon, and Paris. Choose one destination.')
     if 'destination' not in trip:
         raise ValueError('Include Tokyo, Lisbon, or Paris in your trip request.')
     trip.setdefault('origin', 'San Francisco')
@@ -38,7 +38,7 @@ def parse_trip(message, previous=None):
         trip['travelers'] = int(people[1])
     trip.setdefault('travelers', 1)
     if re.search(r'\b(?:eur|cad|inr|gbp|yen|rupees|lakhs?)\b|[€£₹]', text):
-        raise ValueError('Use a total budget in USD for this demo.')
+        raise ValueError('Use a total budget in USD.')
     amount = re.search(r'(?:\$\s*|\b(?:budget(?:\s+of)?|under)\s*\$?\s*)(\d[\d,]*(?:\.\d{1,2})?)', text)
     if amount:
         from decimal import Decimal
@@ -65,5 +65,5 @@ def run(state):
     trip = parse_trip(state['message'], state.get('trip'))
     flights = provider().search(trip)
     if not flights:
-        raise ValueError('No flight research results. Try another origin or switch the flight provider to mock.')
+        raise ValueError('No flight research results. Try another origin or switch the flight provider.')
     return {'trip': trip, 'flight_results': flights, 'trace': ['Flight research'], 'complete': False}
