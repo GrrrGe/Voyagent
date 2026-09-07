@@ -33,7 +33,7 @@ Use these in the landing input or select the corresponding sample. Dates default
 2. `Plan 5 days in Lisbon from New York under $1800 for 1 traveler, with history and walking.` Estimated total: **$1,281.50 USD estimated**.
 3. `Plan 4 days in Paris from Toronto under $1600 for 1 traveler, with art and history.` Estimated total: **$1,272.70 USD estimated**.
 
-Supported demo destinations are Tokyo, Lisbon, and Paris. Origins are San Francisco, New York, Toronto, London, Chennai, and the three destination cities. Use 2 to 14 days, 1 to 8 travelers, USD budgets from $100 to $100,000, and dates today or later. The form makes these inputs explicit. The deterministic parser recognizes these fields, ISO dates, and food, art, history, or walking interests. It is not an unrestricted natural-language assistant. Other currencies are rejected rather than silently converted. Extend `tools/catalog.py` and parser tests to add destinations.
+Supported destinations are Tokyo, Lisbon, Paris, Dubai, and Bangkok. Country names Japan, Thailand, and the UAE map to Tokyo, Bangkok, and Dubai. Origins are San Francisco, New York, Toronto, London, Chennai, Dhaka, and the five destination cities. Use 2 to 14 days, 1 to 8 travelers, USD budgets from $100 to $100,000, and dates today or later. The form makes these inputs explicit. The deterministic parser recognizes these fields, ISO dates, and food, art, history, or walking interests. It is not an unrestricted natural-language assistant. Other currencies are rejected rather than silently converted. Extend `tools/catalog.py` and parser tests to add destinations.
 
 Examples of follow-ups in the same trip:
 

@@ -1,6 +1,6 @@
 import re
 from datetime import date, timedelta
-from tools.catalog import CITIES, ORIGINS
+from tools.catalog import CITIES, ORIGINS, COUNTRY_ALIASES
 from tools.flight_tool import provider
 
 def parse_trip(message, previous=None):
@@ -13,19 +13,24 @@ def parse_trip(message, previous=None):
     if origin:
         city = next((c for c in ORIGINS if c.lower() == origin[1].strip()), None)
         if not city:
-            raise ValueError('Use an origin of San Francisco, New York, Toronto, London, Chennai, Tokyo, Lisbon, or Paris.')
+            raise ValueError('Use an origin of San Francisco, New York, Toronto, London, Chennai, Dhaka, Tokyo, Lisbon, Paris, Dubai, or Bangkok.')
         trip['origin'] = city
-    destination = re.search(r'\b(?:to|in|visit)\s+(tokyo|lisbon|paris)\b', text)
+    destination = re.search(r'\b(?:to|in|visit)\s+(tokyo|lisbon|paris|dubai|bangkok)\b', text)
     mentioned = [c for c in CITIES if c.lower() in text and c != trip.get('origin')]
     if destination:
         trip['destination'] = destination[1].title()
     elif mentioned:
         trip['destination'] = mentioned[0]
+    else:
+        for name, city in COUNTRY_ALIASES.items():
+            if re.search(r'\b' + name + r'\b', text) and city != trip.get('origin'):
+                trip['destination'] = city
+                break
     explicit_destination = re.search(r'\b(?:to|in|visit)\s+([a-z]+)(?:\s+(?:for|trip|on|under|from)\b|\s*$)', text)
-    if explicit_destination and explicit_destination[1].title() not in CITIES:
-        raise ValueError('Currently supports Tokyo, Lisbon, and Paris. Choose one destination.')
+    if explicit_destination and explicit_destination[1].title() not in CITIES and explicit_destination[1] not in COUNTRY_ALIASES:
+        raise ValueError('Currently supports Tokyo, Lisbon, Paris, Dubai, and Bangkok. Choose one destination.')
     if 'destination' not in trip:
-        raise ValueError('Include Tokyo, Lisbon, or Paris in your trip request.')
+        raise ValueError('Include Tokyo, Lisbon, Paris, Dubai, or Bangkok in your trip request.')
     trip.setdefault('origin', 'San Francisco')
     if trip['origin'] == trip['destination']:
         raise ValueError('Choose different origin and destination cities.')

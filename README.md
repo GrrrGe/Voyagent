@@ -85,6 +85,8 @@ The home page is the trip planner. `/about` explains how it works. No database s
 | 7 days in Tokyo from San Francisco under $2500, with food and walking | $1,948.10 USD estimated |
 | 5 days in Lisbon from New York under $1800, with history and walking | $1,281.50 USD estimated |
 | 4 days in Paris from Toronto under $1600, with art and history | $1,272.70 USD estimated |
+| 5 days in Dubai from Dhaka, with flights, hotels, and sightseeing | $1,695.10 USD estimated |
+| 6 days in Thailand from London under $2000, with food and walking | $1,555.40 USD estimated |
 
 These examples use one traveler and default to 30 days from today. Then try `Rain on day 2`, `My flight has a 4 hour delay on day 1`, or `Make it 5 days under $1800` in the same conversation.
 

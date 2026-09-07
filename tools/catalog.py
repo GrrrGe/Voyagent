@@ -34,5 +34,30 @@ CITIES = {
             ('Left Bank', 'Luxembourg Garden', 'Latin Quarter walk', 'Cluny Museum'),
         ],
     },
+    'Dubai': {
+        'airport': 'DXB', 'country': 'United Arab Emirates', 'fare': 74000, 'night': 12800,
+        'stay': 'Marina View Rooms', 'area': 'Dubai Marina',
+        'clusters': [
+            ('Dubai Marina', 'Marina walk', 'JBR beachfront', 'Marina museum visit'),
+            ('Downtown', 'Burj Khalifa exterior', 'Dubai Mall walk', 'Aquarium visit'),
+            ('Deira', 'Gold Souk lanes', 'Creek crossing', 'Coffee museum visit'),
+            ('Jumeirah', 'Jumeirah beach walk', 'Kite Beach park', 'Etihad museum visit'),
+            ('Al Fahidi', 'Al Fahidi lanes', 'Dubai Creek walk', 'Coin museum visit'),
+            ('Palm Jumeirah', 'Boardwalk stroll', 'Palm viewpoints', 'Aquaventure water park'),
+        ],
+    },
+    'Bangkok': {
+        'airport': 'BKK', 'country': 'Thailand', 'fare': 69000, 'night': 7400,
+        'stay': 'Riverside House', 'area': 'Riverside',
+        'clusters': [
+            ('Riverside', 'Wat Arun exterior', 'River ferry ride', 'Royal Barge museum'),
+            ('Old City', 'Grand Palace exterior', 'Wat Pho grounds', 'National Museum'),
+            ('Chinatown', 'Yaowarat lanes', 'Street food walk', 'Chinatown heritage center'),
+            ('Sukhumvit', 'Benjasiri Park', 'Soi shopping walk', 'Contemporary art gallery'),
+            ('Silom', 'Lumphini Park', 'Patpong market walk', 'Sri Mariamman temple visit'),
+            ('Chatuchak', 'Weekend market lanes', 'Chatuchak Park', 'Children discovery museum'),
+        ],
+    },
 }
-ORIGINS = {'San Francisco': 'SFO', 'New York': 'JFK', 'Toronto': 'YYZ', 'London': 'LHR', 'Chennai': 'MAA', **{k: v['airport'] for k, v in CITIES.items()}}
+ORIGINS = {'San Francisco': 'SFO', 'New York': 'JFK', 'Toronto': 'YYZ', 'London': 'LHR', 'Chennai': 'MAA', 'Dhaka': 'DAC', **{k: v['airport'] for k, v in CITIES.items()}}
+COUNTRY_ALIASES = {'japan': 'Tokyo', 'thailand': 'Bangkok', 'uae': 'Dubai', 'emirates': 'Dubai'}

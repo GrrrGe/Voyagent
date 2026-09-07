@@ -10,6 +10,8 @@ def main():
         ('tokyo', '7 days in Tokyo from San Francisco under $2500 on 2030-10-01', 7),
         ('lisbon', '5 days in Lisbon from New York under $1800 on 2030-10-01', 5),
         ('paris', '4 days in Paris from Toronto under $1600 on 2030-10-01', 4),
+        ('dubai', '5 days in Dubai from Dhaka under $2500 on 2030-10-01', 5),
+        ('bangkok', '6 days in Bangkok from London under $2000 on 2030-10-01', 6),
         ('tokyo', 'Rain on day 2', 7),
         ('lisbon', 'A flight cancellation on day 1', 5),
         ('paris', 'Make it 3 days under $1100', 3),

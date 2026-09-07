@@ -109,3 +109,16 @@ def test_art_preferences_do_not_duplicate_visits(graph):
         titles = [event['title'] for event in day['events']]
         assert len(titles) == len(set(titles))
     assert state['budget']['total_cents'] == 127270
+
+@pytest.mark.parametrize('message,destination,origin,days', [
+    ('Plan a 5 days Dubai trip from Dhaka with flights, hotels and sightseeing on 2030-10-01', 'Dubai', 'Dhaka', 5),
+    ('Plan a 6 day Thailand trip from London under $2000 with food and walking on 2030-10-01', 'Bangkok', 'London', 6),
+    ('Plan a complete 7 day Japan trip from Chennai under $2200 for 2 travelers on 2030-10-01', 'Tokyo', 'Chennai', 7),
+    ('Compare flights from New York to Tokyo for 2 travelers under $1500 on 2030-10-01', 'Tokyo', 'New York', 7),
+])
+def test_new_sample_trips(graph, message, destination, origin, days):
+    state = graph.invoke({'message': message}, {'configurable': {'thread_id': f'sample-{destination}-{days}'}})
+    assert state['complete'] and len(state['trace']) == 6
+    assert state['trip']['destination'] == destination and state['trip']['origin'] == origin
+    assert len(state['itinerary']) == days and feasible(state['itinerary'])
+    assert sum(item['amount_cents'] for item in state['budget']['items']) == state['budget']['total_cents']

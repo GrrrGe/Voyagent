@@ -1,6 +1,10 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 const examples = {
+  Japan: 'Plan a complete 7 day Japan trip from Chennai under $2200 for 2 travelers, with food and walking.',
+  Dubai: 'Plan a 5 days Dubai trip from Dhaka with flights, hotels and sightseeing.',
+  Thailand: 'Plan a 6 day Thailand trip from London under $2000 with food and walking.',
+  Flights: 'Compare flights from New York to Tokyo for 2 travelers under $1500.',
   Tokyo: 'Plan 7 days in Tokyo from San Francisco under $2500 for 1 traveler, with food and walking.',
   Lisbon: 'Plan 5 days in Lisbon from New York under $1800 for 1 traveler, with history and walking.',
   Paris: 'Plan 4 days in Paris from Toronto under $1600 for 1 traveler, with art and history.'
@@ -175,6 +179,15 @@ function bind(id, handler) {
   if (element) element.addEventListener('submit', handler);
 }
 bind('hero-form', event => { event.preventDefault(); submitTrip($('trip-message').value, true); });
+const tripBox = $('trip-message');
+const charCount = $('char-count');
+if (tripBox) {
+  const updateCount = () => { if (charCount) charCount.textContent = `${tripBox.value.length} / 800`; };
+  tripBox.addEventListener('input', updateCount); updateCount();
+  tripBox.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); submitTrip(tripBox.value, true); }
+  });
+}
 bind('planner-form', event => {
   event.preventDefault();
   submitTrip(`Plan ${$('days').value} days in ${$('destination').value} from ${$('origin').value} on ${$('start-date').value} for ${$('travelers').value} travelers under $${$('budget').value}, with ${$('interests').value}.`);
@@ -241,13 +254,15 @@ async function init() {
     return;
   }
   request('/health').then(response => response.json()).then(health => {
+    const badge = $('online-badge');
+    if (badge) { badge.classList.remove('offline'); badge.replaceChildren(); badge.append(E('span', 'status-dot'), document.createTextNode(' Online')); }
     const note = $('provider-note');
     if (!note) return;
     const live = Object.entries(health.providers).filter(([, mode]) => mode === 'LIVE').map(([name]) => name);
     if (health.language_provider === 'openai') note.textContent = 'AI-powered by OpenAI. Costs are estimated allowances.';
     else if (live.length) note.textContent = `Live research: ${live.join(', ')}. Price allowances stay estimated.`;
     else note.textContent = 'AI-powered planning. Costs are estimates.';
-  }).catch(() => { const note = $('provider-note'); if (note) note.textContent = 'Planner connection unavailable. Try again shortly.'; });
+  }).catch(() => { const note = $('provider-note'); if (note) note.textContent = 'Planner connection unavailable. Try again shortly.'; const badge = $('online-badge'); if (badge) { badge.classList.add('offline'); badge.replaceChildren(); badge.append(E('span', 'status-dot'), document.createTextNode(' Offline')); } });
   if (threadId) {
     setBusy(true, 'Opening your saved trip.');
     try { plan = await (await request(`/api/travel/${threadId}`)).json(); renderPlan(); }

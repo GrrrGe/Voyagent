@@ -34,3 +34,9 @@
 footer{background:var(--forest-deep)}
 .footer-top .eyebrow,.footer-bottom>span{color:var(--sage)}
 .footer-bottom{border-color:var(--forest)}
+.online-badge{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--on-primary);border-radius:var(--pill);padding:12px 20px;font-size:var(--caption);font-weight:600;white-space:nowrap}
+.online-badge .status-dot{background:#4ade80}
+.online-badge.offline .status-dot{background:#f87171}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.footer-stack{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:48px;padding-top:24px;border-top:1px solid var(--forest);font-size:var(--caption)}
+.footer-stack>span:first-child{font-weight:650;font-size:var(--body)}

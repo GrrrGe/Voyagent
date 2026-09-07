@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Describe your trip and get flights, stays, a daily itinerary, and a budget. Built with six planning agents and live AI.">
-  <title>Voyagent. Plan your trip.</title>
+  <meta name="description" content="Describe your trip in plain language. Six AI agents plan flights, stays, a daily itinerary, and a budget.">
+  <title>Voyagent. Your trip, planned by AI agents.</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/style.css">
@@ -14,29 +14,30 @@
   <a class="skip" href="#main">Skip to content</a>
   <nav class="nav" aria-label="Main navigation">
     <a class="brand" href="/" aria-label="Voyagent home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 5h8l5 13L23 5h6L17 29z" fill="currentColor"/><path d="m3 15 6 3 4 11z" fill="currentColor"/></svg><span>voyagent</span></a>
-    <div class="nav-links"><a href="/">Planner</a><a href="/about">How it works</a><a href="/about#agents">The agents</a></div>
-    <a class="button primary nav-cta" href="/about">How it works <span aria-hidden="true">↗</span></a>
+    <div class="nav-links"><a href="/about">How it works</a><a href="#planner">Plan a trip</a><a href="https://github.com/GrrrGe/Voyagent" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+    <span id="online-badge" class="online-badge" role="status"><span class="status-dot"></span> Checking</span>
   </nav>
   <main id="main">
     <section class="hero wrap">
-      <p class="eyebrow"><span class="status-dot"></span> ONE REQUEST. SIX AGENTS.</p>
-      <h1>Less planning.<br><span class="hero-color">More going.</span></h1>
-      <p class="hero-subtitle">Tell us where you want to go.<br>Get the flights, the stay, and a plan for every day.</p>
+      <p class="eyebrow"><span class="status-dot"></span> MULTI-AGENT TRIP PLANNING, POWERED BY LANGGRAPH.</p>
+      <h1>Your trip, planned<br><span class="hero-color">by a team of AI agents.</span></h1>
+      <p class="hero-subtitle">Describe your dream trip in plain language.<br>Flight, hotel, itinerary, and report agents work in sequence to hand you a complete, ready-to-read plan.</p>
+      <div class="hero-cta"><a class="button primary" href="#planner">Start planning <span aria-hidden="true">↗</span></a><a class="button outline" href="/about">See how it works</a></div>
+    </section>
+    <section id="planner" class="planner wrap">
+      <div class="planner-heading"><div><p class="eyebrow">THE TRIP PLANNER.</p><h1>Where do you want to go?</h1></div><button id="new-trip" class="button outline">New plan <span aria-hidden="true">+</span></button></div>
       <form id="hero-form" class="trip-input">
         <label class="sr-only" for="trip-message">Describe your trip</label>
-        <textarea id="trip-message" rows="2" required maxlength="2000" placeholder="7 days in Tokyo from San Francisco, under $2,500..."></textarea>
-        <div class="input-bottom"><span><span aria-hidden="true">✳</span> A destination. A few details. A starting point.</span><button class="button primary" type="submit">Make a plan <span aria-hidden="true">↗</span></button></div>
+        <textarea id="trip-message" rows="3" required maxlength="800" placeholder="Example: Plan a complete 7 day Japan trip from Chennai under $2,200."></textarea>
+        <div class="input-bottom"><span><span aria-hidden="true">✳</span> <span id="char-count">0 / 800</span> · Ctrl + Enter to send.</span><button class="button primary" type="submit">Generate Plan <span aria-hidden="true">↗</span></button></div>
       </form>
-      <div class="suggestions"><span>Or start here</span><button data-example="Tokyo">7 days in Tokyo ↗</button><button data-example="Lisbon">5 days in Lisbon ↗</button><button data-example="Paris">4 days in Paris ↗</button></div>
+      <div class="suggestions"><span>Or start here</span><button data-example="Japan">🗾 Japan Trip</button><button data-example="Dubai">🏙️ Dubai Trip</button><button data-example="Thailand">🏝️ Thailand Trip</button><button data-example="Flights">🌍 Global Flights</button></div>
       <p class="fine-print">No account needed. AI-generated plan with estimated costs. No bookings are made.</p>
-    </section>
-    <div id="planner" class="planner wrap">
-      <div class="planner-heading"><div><h1>Your next trip.</h1><p class="muted">Set the details below. Your plan appears here.</p></div><button id="new-trip" class="button outline">New trip <span aria-hidden="true">+</span></button></div>
       <div class="planner-grid">
         <aside class="planner-aside">
           <form id="planner-form" class="card form-card"><div class="card-heading"><h4>The starting point.</h4><span class="label">USD</span></div>
-            <label for="destination">Where to?</label><select id="destination" name="destination"><option>Tokyo</option><option>Lisbon</option><option>Paris</option></select>
-            <label for="origin">Flying from</label><select id="origin" name="origin"><option>San Francisco</option><option>New York</option><option>Toronto</option><option>London</option><option>Chennai</option><option>Tokyo</option><option>Lisbon</option><option>Paris</option></select>
+            <label for="destination">Where to?</label><select id="destination" name="destination"><option>Tokyo</option><option>Lisbon</option><option>Paris</option><option>Dubai</option><option>Bangkok</option></select>
+            <label for="origin">Flying from</label><select id="origin" name="origin"><option>San Francisco</option><option>New York</option><option>Toronto</option><option>London</option><option>Chennai</option><option>Dhaka</option><option>Tokyo</option><option>Lisbon</option><option>Paris</option><option>Dubai</option><option>Bangkok</option></select>
             <label for="start-date">Arrival date</label><input id="start-date" name="start-date" type="date" required>
             <div class="form-pair"><div><label for="days">Days</label><input id="days" name="days" type="number" value="7" min="2" max="14" required></div><div><label for="travelers">Travelers</label><input id="travelers" name="travelers" type="number" value="1" min="1" max="8" required></div></div>
             <label for="budget">Total budget in USD</label><input id="budget" name="budget" type="number" min="100" max="100000" value="2500" step="0.01" required>
@@ -48,7 +49,7 @@
         <section class="results" aria-label="Trip results">
           <div id="status" class="status-message" role="status" aria-live="polite" hidden></div>
           <div id="error" class="error-message" role="alert" hidden></div>
-          <div id="empty-state" class="empty-state card"><div class="empty-mark" aria-hidden="true">↗</div><p class="eyebrow">THE WORLD CAN WAIT A SECOND</p><h2>A trip starts<br>with a sentence.</h2><p>Set your destination and a few details.<br>We will work out the days in between.</p><button class="button soft" data-example="Tokyo">Try the Tokyo trip ↗</button></div>
+          <div id="empty-state" class="empty-state card"><div class="empty-mark" aria-hidden="true">🧭</div><p class="eyebrow">THE WORLD CAN WAIT A SECOND</p><h2>A trip starts<br>with a sentence.</h2><p>Set your destination and a few details.<br>We will work out the days in between.</p><button class="button soft" data-example="Japan">Try the Japan trip ↗</button></div>
           <div id="plan-content" hidden>
             <div class="result-top"><div><p id="trip-kicker" class="eyebrow"></p><h2 id="trip-title"></h2><p id="trip-meta" class="muted"></p></div><div class="export-actions"><button id="copy-plan" class="button outline">Copy plan</button><button id="pdf-plan" class="button primary">Export PDF ↗</button></div></div>
             <div id="agent-trace" class="trace" aria-label="Completed agents"></div>
@@ -58,9 +59,20 @@
           </div>
         </section>
       </div>
-    </div>
+    </section>
+    <section id="agents" class="section wrap">
+      <div class="section-heading"><div><p class="eyebrow">ONE REQUEST, SIX SPECIALIZED AGENTS</p><h2>Each step is a real node<br>in the LangGraph pipeline.</h2></div><p>Not a simulation.<br>Every agent runs in sequence.</p></div>
+      <div class="agents-grid">
+        <article><span class="agent-icon" aria-hidden="true">✈️</span><span class="agent-number">01</span><h4>Flight Agent.</h4><p>Searches flight data for your route and dates.</p><span class="agent-foot">Routes &amp; schedules</span></article>
+        <article><span class="agent-icon" aria-hidden="true">🏨</span><span class="agent-number">02</span><h4>Hotel Agent.</h4><p>Finds and ranks stays that fit your destination and budget.</p><span class="agent-foot">Stays &amp; locations</span></article>
+        <article><span class="agent-icon" aria-hidden="true">🗺️</span><span class="agent-number">03</span><h4>Itinerary Agent.</h4><p>Builds a day-by-day plan grounded in retrieved local knowledge.</p><span class="agent-foot">Days &amp; distances</span></article>
+        <article><span class="agent-icon" aria-hidden="true">↻</span><span class="agent-number">04</span><h4>Disruption Agent.</h4><p>Reworks affected days for rain, delays, or cancellations.</p><span class="agent-foot">Disruption &amp; replanning</span></article>
+        <article><span class="agent-icon" aria-hidden="true">⊕</span><span class="agent-number">05</span><h4>Budget Agent.</h4><p>Adds every cost with a 10% reserve and flags overruns.</p><span class="agent-foot">Costs &amp; tradeoffs</span></article>
+        <article><span class="agent-icon" aria-hidden="true">📋</span><span class="agent-number">06</span><h4>Report Agent.</h4><p>Formats everything into one clear travel plan.</p><span class="agent-foot">One place for the details</span></article>
+      </div>
+    </section>
   </main>
-  <footer><div class="wrap"><div class="footer-top"><div><p class="eyebrow">A PLAN FOR THE PLACES AHEAD</p><h2>Go from someday<br>to a day-by-day.</h2></div><a class="button inverse" href="/about">How it works ↗</a></div><div class="footer-bottom"><a class="brand" href="/">↗ voyagent</a><span>Six agents. One itinerary.</span><span>Built for the next departure. © 2026</span></div></div></footer>
+  <footer><div class="wrap"><div class="footer-top"><div><p class="eyebrow">A PLAN FOR THE PLACES AHEAD</p><h2>Go from someday<br>to a day-by-day.</h2></div><a class="button inverse" href="#planner">Plan a trip ↗</a></div><div class="footer-stack"><span>🧭 Voyagent</span><span>FastAPI · LangGraph · LangChain · OpenAI · Chroma · PostgreSQL</span><a href="https://github.com/GrrrGe/Voyagent" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><div class="footer-bottom"><span>Six agents. One itinerary.</span><span>Built for the next departure. © 2026</span></div></div></footer>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>
