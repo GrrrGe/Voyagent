@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Voyagent — an AI travel planner powered by a LangGraph multi-agent pipeline that finds flights, hotels, and builds a complete itinerary.">
+    <title>Voyagent · AI Trip Architect</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="page-bg">
+        <div class="gradient-circle circle-1"></div>
+        <div class="gradient-circle circle-2"></div>
+        <div class="gradient-circle circle-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="/">
+                <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 5h8l5 13L23 5h6L17 29z" fill="currentColor"/><path d="m3 15 6 3 4 11z" fill="currentColor"/></svg>
+                <span class="brand-name">Voyagent</span>
+            </a>
+
+            <nav class="site-nav">
+                <a href="#how-it-works">How it works</a>
+                <a href="#planner">Plan a trip</a>
+                <a href="https://github.com/GrrrGe/Voyagent" target="_blank" rel="noopener">GitHub</a>
+            </nav>
+
+            <div class="header-status" id="apiStatus" title="Checking API status...">
+                <span class="status-dot pending"></span>
+                <span class="status-label">Checking...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+
+        <section class="hero-section">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Multi-agent trip planning, powered by LangGraph
+            </div>
+
+            <h1>
+                Your trip, planned by
+                <span class="text-gradient">a team of AI agents.</span>
+            </h1>
+
+            <p>
+                Describe your dream trip in plain language. A flight agent, a hotel agent, an
+                itinerary agent and a final-report agent work in sequence to hand you a
+                complete, ready-to-book plan.
+            </p>
+
+            <div class="hero-cta">
+                <a href="#planner" class="btn btn-primary">
+                    Start planning
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </a>
+                <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
+            </div>
+        </section>
+
+        <section class="how-it-works" id="how-it-works">
+            <div class="section-heading">
+                <h2>One request, four specialized agents</h2>
+                <p>Each step below is a real node in the underlying LangGraph pipeline — not a simulation.</p>
+            </div>
+
+            <div class="pipeline">
+                <div class="pipeline-step">
+                    <div class="step-icon flight">✈️</div>
+                    <h3>Flight Agent</h3>
+                    <p>Searches live flight data for your route and dates.</p>
+                </div>
+                <div class="pipeline-arrow">
+                    <svg width="28" height="16" viewBox="0 0 28 16" fill="none"><path d="M1 8h24M20 1l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-icon hotel">🏨</div>
+                    <h3>Hotel Agent</h3>
+                    <p>Finds and ranks stays that fit your destination and budget.</p>
+                </div>
+                <div class="pipeline-arrow">
+                    <svg width="28" height="16" viewBox="0 0 28 16" fill="none"><path d="M1 8h24M20 1l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-icon itinerary">🗺️</div>
+                    <h3>Itinerary Agent</h3>
+                    <p>Builds a day-by-day plan from the flight and hotel results.</p>
+                </div>
+                <div class="pipeline-arrow">
+                    <svg width="28" height="16" viewBox="0 0 28 16" fill="none"><path d="M1 8h24M20 1l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-icon final">📋</div>
+                    <h3>Report Agent</h3>
+                    <p>Formats everything into one clear, bookable travel plan.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="planner-card" id="planner">
+
+            <div class="card-header">
+                <div>
+                    <h2>Where do you want to go?</h2>
+                    <p>Example: Plan a complete 7 day Japan trip from Chennai under 2 lakhs.</p>
+                </div>
+
+                <button class="new-chat-btn" id="newChatBtn" onclick="startNewPlan()" title="Start a fresh conversation">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    New plan
+                </button>
+            </div>
+
+            <div class="input-area">
+                <textarea
+                    id="userInput"
+                    maxlength="800"
+                    placeholder="Plan a complete 7 days Japan trip including flights, hotels and sightseeing under 2 lakhs..."
+                ></textarea>
+
+                <button id="sendBtn" onclick="sendMessage()">
+                    <span id="btnText">
+                        Generate Plan
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </span>
+                    <span id="btnLoader" class="loader hidden"></span>
+                </button>
+            </div>
+
+            <div class="input-footer">
+                <span id="charCount">0 / 800</span>
+                <span class="hint">Ctrl + Enter to send</span>
+            </div>
+
+            <div class="quick-prompts">
+                <button onclick="setPrompt('Plan a complete 7 days Japan trip from Bangladesh including flights, hotels and sightseeing under 2 lakhs.')">
+                    🗾 Japan Trip
+                </button>
+                <button onclick="setPrompt('Plan a 5 days Dubai trip from Dhaka with flights, hotels and sightseeing.')">
+                    🏙️ Dubai Trip
+                </button>
+                <button onclick="setPrompt('Plan a 7 days Thailand trip from Bangladesh with budget hotels and sightseeing.')">
+                    🏝️ Thailand Trip
+                </button>
+                <button onclick="setPrompt('Give me all country flight info.')">
+                    🌍 Global Flights
+                </button>
+            </div>
+
+        </section>
+
+        <section id="loadingSection" class="loading-section hidden">
+            <div class="loading-pipeline">
+                <div class="loading-step" data-step="flight"><span class="dot"></span> Searching flights…</div>
+                <div class="loading-step" data-step="hotel"><span class="dot"></span> Finding hotels…</div>
+                <div class="loading-step" data-step="itinerary"><span class="dot"></span> Building itinerary…</div>
+                <div class="loading-step" data-step="final"><span class="dot"></span> Writing final report…</div>
+            </div>
+        </section>
+
+        <section id="resultSection" class="result-section hidden">
+
+            <div class="result-header">
+                <div>
+                    <h2>Your AI Travel Plan</h2>
+                    <div class="result-meta">
+                        <span class="meta-chip" id="threadInfo">Thread: -</span>
+                        <span class="meta-chip" id="llmCallsInfo">Agent calls: -</span>
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button class="copy-btn" onclick="copyResult()">Copy</button>
+                    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+                </div>
+            </div>
+
+            <div class="result-tabs" role="tablist">
+                <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+                <button class="tab-btn" data-tab="flights" onclick="switchTab('flights')">✈️ Flights</button>
+                <button class="tab-btn" data-tab="hotels" onclick="switchTab('hotels')">🏨 Hotels</button>
+                <button class="tab-btn" data-tab="itinerary" onclick="switchTab('itinerary')">🗺️ Itinerary</button>
+            </div>
+
+            <div id="pdfContent" class="pdf-content">
+                <h1 class="pdf-title">Voyagent Travel Plan</h1>
+
+                <div class="tab-panel active" id="panel-overview">
+                    <div id="resultBox" class="result-box"></div>
+                </div>
+                <div class="tab-panel" id="panel-flights">
+                    <div id="flightBox" class="result-box"></div>
+                </div>
+                <div class="tab-panel" id="panel-hotels">
+                    <div id="hotelBox" class="result-box"></div>
+                </div>
+                <div class="tab-panel" id="panel-itinerary">
+                    <div id="itineraryBox" class="result-box"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="errorBox" class="error-box hidden"></section>
+
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="brand-mark">↗</span> Voyagent
+            </div>
+            <div class="footer-stack">
+                <span>FastAPI</span>·<span>LangGraph</span>·<span>OpenAI</span>·<span>PostgreSQL</span>·<span>Tavily</span>·<span>AviationStack</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Markdown Renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- PDF Download Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Your Custom JS -->
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
