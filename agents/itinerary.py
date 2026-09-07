@@ -16,7 +16,12 @@ def feasible(days):
 def run(state):
     trip = state['trip']
     clusters = CITIES[trip['destination']]['clusters']
-    order = provider().order(trip, len(clusters))
+    try:
+        from tools.knowledge import retrieve
+        grounding = retrieve(trip)
+    except Exception:
+        grounding = {'order': list(range(len(clusters))), 'areas': []}
+    order = provider().order({**trip, 'grounding': grounding['areas']}, len(clusters))
     days = []
     for i in range(trip['days']):
         area, place1, place2, indoor = clusters[order[i % len(order)]]
@@ -33,5 +38,5 @@ def run(state):
                          area=area, events=events, indoor_alternative=indoor,
                          note='Arrival and check-in before 15:00.' if i == 0 else ('Leave for the airport after 14:00.' if i == trip['days'] - 1 else 'Meal breaks and at least 30 minutes between stops.')))
     assert feasible(days)
-    return {'itinerary': days, 'llm_calls': 1 if is_live() else 0,
+    return {'itinerary': days, 'grounding': grounding['areas'], 'llm_calls': 1 if is_live() else 0,
             'trace': state['trace'] + ['Itinerary']}

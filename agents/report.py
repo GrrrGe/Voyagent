@@ -14,7 +14,10 @@ def run(state):
              f"{state['selected_flight']['data_source']} flight research. {state['selected_flight']['note']}",
              'Hotels.', f"{state['selected_hotel']['name']}: {money(state['selected_hotel']['nightly_cents'])} per room per night.",
              f"{state['selected_hotel']['data_source']} hotel research. {state['selected_hotel']['note']}",
-             'Trip assumptions: destination days, one local area per day, 30 minute minimum gaps. Opening hours and travel dates need confirmation. Visa fees, insurance, and shopping are excluded.', 'Itinerary.']
+             'Trip assumptions: destination days, one local area per day, 30 minute minimum gaps. Opening hours and travel dates need confirmation. Visa fees, insurance, and shopping are excluded.']
+    if state.get('grounding'):
+        lines.append(f"Retrieved areas: {', '.join(state['grounding'][:4])}.")
+    lines.append('Itinerary.')
     for day in state['itinerary']:
         lines.append(f"Day {day['day']}. {day['area']}. {day['date']}.")
         lines.append(day['note'])

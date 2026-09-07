@@ -15,6 +15,7 @@ Turn a trip request into flight research, hotel options, a day-by-day itinerary,
 
 - Runs six specialized agents in a LangGraph `StateGraph`: flight research, hotel research, itinerary, disruption replan, budget check, and report.
 - Retrieval-grounded generation: agents gather flight schedules, hotel research, and curated destination data first, then the LLM reasons over that retrieved context under strict JSON schemas.
+- Searches a persistent Chroma vector store with LangChain to ground every itinerary in embedded destination knowledge.
 - Produces Overview, Flights, Hotels, Itinerary, and Budget tabs.
 - Persists conversation checkpoints in PostgreSQL with per-thread resumption.
 - Replans affected days for rain, flight delays, or cancellations.
@@ -48,6 +49,7 @@ flowchart LR
 | API | FastAPI, Pydantic validation, Uvicorn |
 | Agentic orchestration | LangGraph `StateGraph`, six typed-state nodes, tool calls per agent |
 | Retrieval grounding | AviationStack routes, Tavily hotel search, curated destination catalogs |
+| Vector knowledge | Chroma persistent store, LangChain retriever, OpenAI or offline hash embeddings |
 | Conversation state | PostgreSQL checkpoints, browser session isolation |
 | Language models | OpenAI Responses API with strict JSON schemas, or Groq |
 | Cost model | Integer-cent arithmetic, budget adjustment |
@@ -140,6 +142,7 @@ Set `LLM_PROVIDER=openai` and `OPENAI_API_KEY` in the server environment. Option
 - **Budget correctness:** totals use integer cents and include per-person fares, room counts, nights, activities, and reserve rounding.
 - **Failure handling:** invalid replans and provider failures restore the previous completed plan.
 - **Constrained generation:** LLM output is schema-checked and copy-validated before it enters the plan.
+- **Vector grounding:** destination areas and stays are embedded once into Chroma and retrieved per trip. OpenAI embeddings apply when a key is configured, otherwise deterministic offline embeddings keep development and tests network-free.
 - **Reproducibility:** pinned dependencies and offline fixtures support development and automated evaluation.
 
 Inter is distributed under its [SIL Open Font License](static/fonts/LICENSE.txt). Travel images are from Unsplash: [Tokyo](https://images.unsplash.com/photo-1540959733332-eab4deabeeaf), [Lisbon](https://images.unsplash.com/photo-1555881400-74d7acaacd8b), and [Paris](https://images.unsplash.com/photo-1502602898657-3e91760cbb34).

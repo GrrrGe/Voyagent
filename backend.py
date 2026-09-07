@@ -13,6 +13,7 @@ class TravelState(TypedDict, total=False):
     selected_hotel: dict
     budget: dict
     disruption: dict
+    grounding: list
     changes: list
     summary: str
     answer: str

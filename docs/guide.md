@@ -70,6 +70,7 @@ START -> research -> booking -> itinerary_agent
 | `tools/hotel_tool.py` | Tavily adapter selected only by an explicit flag |
 | `tools/mock_providers.py` | Provider protocols and deterministic default implementations |
 | `tools/language_tool.py` | Groq and OpenAI adapters, JSON contracts and copy validation |
+| `tools/knowledge.py` | Chroma vector store, LangChain retriever, trip grounding |
 | `tools/pdf_export.py` | Paginated PDF output from the saved plan |
 | `security.py` | Configuration checks, session secret, thread scoping, rate limiter |
 | `eval.py` | Six keyless graph evaluation cases |
@@ -151,6 +152,12 @@ OPENAI_MODEL=gpt-4.1-mini
 `OPENAI_PROJECT_ID` is optional for a project-scoped key. When set, it is sent as the `OpenAI-Project` request header. This selects an existing OpenAI project; it does not create an OpenAI project. The key must have access to that project and model. The server sends two constrained Responses API calls per trip, with strict JSON schemas, an output-token cap, a 30-second timeout, and `store: false`. Incomplete responses, refusals, and invalid copy fail the request. Flight and hotel prices stay estimated unless a verified fare provider is added.
 
 OpenAI support is covered by stubbed HTTP contract tests. A live call requires your actual server-side key. The curated default remains available without keys for local development.
+
+## Vector knowledge.
+
+Destination areas and stays are embedded into a persistent Chroma collection at `DATA_DIR/chroma` and seeded from the catalog on first use. The itinerary agent retrieves the top areas per trip with a LangChain retriever, passes them to the language model as grounding, and records them in the plan under `grounding` and a `Retrieved areas` report line.
+
+With `OPENAI_API_KEY` configured, embeddings use `text-embedding-3-small` (override with `OPENAI_EMBEDDING_MODEL`). Without a key, deterministic hash embeddings keep local development and tests offline. On Render free plans the filesystem is ephemeral, so the index rebuilds automatically on restart.
 
 ## PostgreSQL checkpoints.
 
