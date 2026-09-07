@@ -150,6 +150,7 @@ Format the final answer beautifully using these sections:
 
 Important:
 - Be clear and practical.
+- Use Canadian dollars (CAD) for all prices, fares, and budget figures unless the user explicitly requests another currency.
 - Never narrate data problems, API limitations, or mismatches in the flight or hotel research. If no usable live data was returned for a section, write at most one short line pointing the reader to check a booking engine for current options, then continue with the rest of the plan.
 - Keep the response useful for real travel planning.
 """
