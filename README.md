@@ -35,7 +35,7 @@ Voyagent is an AI travel planner built on a **LangGraph multi-agent pipeline**. 
 
 | | |
 |---|---|
-| **Input** | A free-text travel request, e.g. *"Plan a complete 7 day Japan trip from Toronto under CAD 2,500"* |
+| **Input** | A free-text travel request, e.g. *"Plan a complete 7 day Paris trip from Canada under CAD 2,500"* |
 | **Output** | A formatted trip summary — flights, hotel suggestions, day-by-day itinerary, estimated budget |
 | **Orchestration** | A [LangGraph](https://www.langchain.com/langgraph) `StateGraph` with 4 sequential nodes |
 | **Persistence** | Every conversation thread is checkpointed to Postgres, so a `thread_id` can be reused to continue a plan |
@@ -233,7 +233,7 @@ DATABASE_URL='postgresql://user:password@host/dbname?sslmode=require'
 GROQ_API_KEY=your_groq_api_key
 TAVILY_API_KEY=your_tavily_api_key
 AVIATIONSTACK_API_KEY=your_aviationstack_api_key
-DEFAULT_ORIGIN=DEL
+DEFAULT_ORIGIN=YYZ
 ```
 
 ---
@@ -252,7 +252,7 @@ DEFAULT_ORIGIN=DEL
 
 ```json
 {
-  "message": "Plan a 7 day Japan trip from Toronto under CAD 2,500",
+  "message": "Plan a 7 day Paris trip from Canada under CAD 2,500",
   "thread_id": null
 }
 ```
