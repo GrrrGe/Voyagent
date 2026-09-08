@@ -270,8 +270,13 @@ def resolve_location_to_iata(location: str):
             city_matches.append((score, iata))
 
     if city_matches:
-        city_matches.sort(reverse=True)
-        return city_matches[0][1]
+        # Ignore pure "international" name bonus hits (score 10): without a
+        # real city or name match they resolve garbage input to whichever
+        # IATA code sorts last alphabetically.
+        real_matches = [(score, iata) for score, iata in city_matches if score > 10]
+        if real_matches:
+            real_matches.sort(reverse=True)
+            return real_matches[0][1]
 
     return None
 
