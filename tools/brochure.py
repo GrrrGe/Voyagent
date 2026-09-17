@@ -20,6 +20,52 @@ USER_AGENT = "VoyagentBrochure/1.0 (https://github.com/GrrrGe/Voyagent)"
 TILE_SIZE = 256
 MAX_TILES = 12
 ATTRIBUTION = "Map data (c) OpenStreetMap contributors"
+ATTRIBUTION_PDF = "Map data \u00a9 OpenStreetMap contributors"
+
+# Generic travel words that are never map pins.
+GENERIC_WORDS = {
+    "from", "to", "total", "cost", "costs", "budget", "summary", "overview",
+    "arrival", "departure", "hotel", "hotels", "flight", "flights", "airport",
+    "station", "day", "days", "trip", "note", "notes", "tip", "tips", "price",
+    "prices", "person", "taxes", "included", "estimate", "estimated", "approx",
+    "morning", "evening", "afternoon", "night", "base", "highlights", "look",
+    "quick", "stay", "transfer", "check", "lunch", "dinner", "breakfast",
+    "travel", "date", "dates",
+}
+
+_UNICODE_FIXES = {
+    "\u2014": "-", "\u2013": "-", "\u201c": '"', "\u201d": '"',
+    "\u2018": "'", "\u2019": "'", "\u2022": "-", "\u2026": "...",
+    "\u20b9": "Rs. ", "\u00a0": " ",
+}
+
+
+def sanitize(text):
+    """Clean Groq markdown into plain WinAnsi-safe text for the PDF.
+
+    Strips headers, bold/italic, code, links, tables, and list markers,
+    then replaces common unicode punctuation and drops anything else
+    outside latin-1 (emoji included) so Helvetica never prints boxes.
+    """
+    text = text or ""
+    for find, replace in _UNICODE_FIXES.items():
+        text = text.replace(find, replace)
+    text = re.sub(r"```.*?```", " ", text, flags=re.S)
+    text = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = text.replace("|", " ")
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"__(.+?)__", r"\1", text)
+    text = re.sub(r"(?<!\w)\*(?!\s)(.+?)(?<!\s)\*(?!\w)", r"\1", text)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    text = re.sub(r"(?m)^\s*(>\s*)+", "", text)
+    text = re.sub(r"(?m)^\s*(?:\d+[.)]|[-*+])\s+", "", text)
+    text = re.sub(r"[-=]{3,}", " ", text)
+    text = re.sub(r"[#*_`>\[\]{}~]", "", text)
+    text = "".join(c if ord(c) < 256 else "" for c in text)
+    text = re.sub(r"[ \t]+", " ", text)
+    return text.strip()
 
 
 def _base_dir():
@@ -156,8 +202,9 @@ def render_map(points, fetcher=fetch_tile):
 def extract_stops(itinerary, answer="", limit=12):
     """Pull candidate place names from itinerary markdown.
 
-    Collects bold spans and list items, strips markdown, dedupes while
-    keeping visit order. Heuristic by design; misses degrade to fewer pins.
+    Collects bold spans and list items, drops generic travel words,
+    table junk, and digit-heavy labels, dedupes while keeping visit
+    order. Heuristic by design; misses degrade to fewer pins.
     """
     text = "\n".join(part for part in (itinerary or "", answer or "") if part)
     candidates = []
@@ -165,13 +212,21 @@ def extract_stops(itinerary, answer="", limit=12):
     for line in text.splitlines():
         stripped = line.strip()
         if re.match(r"^(\d+[.)]|[-*])\s+", stripped):
-            candidates.append(re.sub(r"^(\d+[.)]|[-*])\s+", "", stripped))
+            item = re.sub(r"^(\d+[.)]|[-*])\s+", "", stripped)
+            if len(re.findall(r"[a-zA-Z]+", item)) <= 5:
+                candidates.append(item)
     seen, stops = set(), []
     for raw in candidates:
         name = re.sub(r"[#*_`>\[\]()]", "", raw).strip().rstrip(".,;:")
-        if len(name) < 3 or len(name) > 80:
+        name = re.sub(r"\s+", " ", name)
+        if len(name) < 3 or len(name) > 60:
             continue
-        if re.match(r"^(day|trip|budget|total|note|tip)\b", name, re.I):
+        if "|" in raw or re.search(r"\d", name):
+            continue
+        if not name[0].isupper():
+            continue
+        words = [w.lower() for w in re.findall(r"[a-zA-Z]+", name)]
+        if not words or all(w in GENERIC_WORDS for w in words):
             continue
         key = name.lower()
         if key not in seen:
@@ -182,30 +237,37 @@ def extract_stops(itinerary, answer="", limit=12):
     return stops
 
 
-def split_summaries(itinerary, per_day_chars=400):
-    """Split itinerary into (day_title, short_summary) sections."""
+def split_summaries(itinerary, per_day_chars=400, max_sections=8):
+    """Split Groq markdown into clean (title, short_summary) sections.
+
+    Prefers markdown headers ("## Day 2 ...", "### Quick look"), falls
+    back to plain "Day N" splits. All output is sanitized plain text.
+    """
     text = (itinerary or "").strip()
     if not text:
         return []
-    parts = re.split(r"(?im)^(?=day\s+\d+\s*[:\-–.]?)", text)
+    parts = re.split(r"(?m)^(?=\s{0,3}#{1,4}\s+\S)", text)
+    if len(parts) < 2:
+        parts = re.split(r"(?im)^(?=day\s+\d+\s*[:\-.])", text)
     sections = []
     for part in parts:
         part = part.strip()
-        if not part:
+        if not part or len(sanitize(part)) < 20:
             continue
-        lines = part.splitlines()
-        title = lines[0].strip().rstrip(":")[:60] or "Itinerary"
-        body = " ".join(line.strip() for line in lines[1:] if line.strip())
-        body = re.sub(r"\s+", " ", body)
+        lines = [line for line in part.splitlines() if line.strip()]
+        title = sanitize(lines[0])[:60].rstrip(":") or "Itinerary"
+        body = sanitize(" ".join(lines[1:]))
         if len(body) > per_day_chars:
             cut = body[:per_day_chars].rsplit(" ", 1)[0]
             body = cut + "..."
-        sections.append((title, body or part[:per_day_chars]))
+        sections.append((title, body or title))
+        if len(sections) >= max_sections:
+            break
     return sections
 
 
 def build_pdf(title, subtitle, map_png, zoom, summaries, stops):
-    """Assemble the brochure PDF. Returns bytes."""
+    """Assemble the brochure PDF from sanitized plain text. Returns bytes."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas as pdf_canvas
@@ -214,9 +276,9 @@ def build_pdf(title, subtitle, map_png, zoom, summaries, stops):
     page_width, page_height = A4
 
     page.setFont("Helvetica-Bold", 22)
-    page.drawString(20 * mm, page_height - 25 * mm, title[:60])
+    page.drawString(20 * mm, page_height - 25 * mm, sanitize(title)[:60])
     page.setFont("Helvetica", 11)
-    page.drawString(20 * mm, page_height - 32 * mm, subtitle[:100])
+    page.drawString(20 * mm, page_height - 32 * mm, sanitize(subtitle)[:100])
 
     cursor = page_height - 40 * mm
     if map_png:
@@ -232,10 +294,14 @@ def build_pdf(title, subtitle, map_png, zoom, summaries, stops):
                            preserveAspectRatio=True, anchor="n")
             cursor -= image_height + 4 * mm
             page.setFont("Helvetica", 7)
-            page.drawString(20 * mm, cursor, ATTRIBUTION + " | Schematic route in visit order, true map scale.")
+            page.drawString(20 * mm, cursor, ATTRIBUTION_PDF + " | Route in visit order, true map scale.")
             cursor -= 8 * mm
         except Exception:
             pass
+    else:
+        page.setFont("Helvetica-Oblique", 10)
+        page.drawString(20 * mm, cursor, "Route map unavailable for this trip - see the day-by-day plan below.")
+        cursor -= 8 * mm
 
     page.setFont("Helvetica-Bold", 14)
     page.drawString(20 * mm, cursor, "Day by day.")
@@ -261,7 +327,7 @@ def build_pdf(title, subtitle, map_png, zoom, summaries, stops):
     page.setFont("Helvetica", 7)
     page.drawString(20 * mm, 12 * mm,
                    "Planning draft with estimated costs. Confirm bookings, hours, and availability. "
-                   + ATTRIBUTION + ".")
+                   + ATTRIBUTION_PDF + ".")
     page.showPage()
     page.save()
     return output.getvalue()
