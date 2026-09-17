@@ -1,10 +1,10 @@
-"""Fast travel-style picker: one row of chips, zero quiz feeling.
+"""Fast travel-style picker: chips plus your own words, zero quiz feeling.
 
-The user taps up to 4 vibe chips (or none to skip) with pace and budget
-preselected to defaults, so Generate Plan works immediately. All fields are
-optional; empty input yields a neutral card that leaves ranking unchanged.
-Same card schema as quiz and Takeout, so the embedding and itinerary paths
-are shared.
+The user taps up to 4 vibe chips and optionally types extra filters in
+their own words ("vegetarian food, late nights, no museums"), or skips
+everything and hits Generate Plan. All fields are optional; empty input
+yields a neutral card that leaves the plan unchanged. Same card schema as
+quiz and Takeout, so the embedding and itinerary paths are shared.
 """
 import re
 
@@ -59,7 +59,8 @@ def parse_quick(payload):
     free_text = payload.get("free_text") or ""
     if not isinstance(free_text, str):
         raise ValueError("free_text must be a string.")
-    words = set(re.findall(r"[a-z0-9]+", free_text.lower()[:500]))
+    free_text = " ".join(free_text.split())[:300]
+    words = set(re.findall(r"[a-z0-9]+", free_text.lower()))
     for interest, keys in _FREE_TEXT_MAP.items():
         if words & set(keys):
             scores[interest] += 0.5
@@ -80,5 +81,6 @@ def parse_quick(payload):
         "avg_stars": None,
         "top_categories": {name: round(value, 3) for name, value in top if value > 0},
         "keywords": keywords + ([setting] if keywords else [setting]),
+        "extra": free_text,
         "source": "quick",
     }

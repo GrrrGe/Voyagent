@@ -50,6 +50,9 @@ def personality_to_text(card):
     indoor = card.get("indoor_bias", 0.5)
     parts.append("indoor" if indoor is not None and indoor > 0.6 else
                  "outdoor" if indoor is not None and indoor < 0.4 else "mixed indoor outdoor")
+    extra = (card.get("extra") or "").strip()
+    if extra:
+        parts.append(extra)
     text = "traveler who likes " + " ".join(parts)
     return text[:2000]
 
@@ -72,6 +75,9 @@ def style_line(card):
     setting = "indoor" if (card.get("indoor_bias", 0.5) or 0.5) > 0.6 else (
         "outdoor" if (card.get("indoor_bias", 0.5) or 0.5) < 0.4 else "mixed indoor/outdoor")
     bits.append(f"prefers {setting}")
+    extra = (card.get("extra") or "").strip()
+    if extra:
+        bits.append(f"extra filters: {extra}")
     return "Traveler style: " + "; ".join(bits) + "."
 
 
