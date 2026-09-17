@@ -220,11 +220,11 @@ _brochure_lock = _threading.Lock()
 
 def _run_brochure_job(job_id, thread_id):
     try:
-        from backend import travel_graph
+        from backend import ensure_graph
         from tools.brochure import (build_pdf, extract_stops, render_map,
                                     split_summaries)
         from tools.geocode import geocode_stops
-        state = travel_graph.get_state({"configurable": {"thread_id": thread_id}}).values
+        state = ensure_graph().get_state({"configurable": {"thread_id": thread_id}}).values
         if not state or not state.get("itinerary"):
             raise ValueError("No completed trip found for this thread.")
         user_query = state.get("user_query", "")
