@@ -535,6 +535,53 @@ textarea::placeholder {
     transform: translateY(-1px);
 }
 
+.style-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--text-dimmer);
+}
+
+.style-label {
+    margin-right: 2px;
+}
+
+.style-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.style-chips button {
+    border: 1px solid var(--border-strong);
+    background: rgba(30, 41, 59, 0.65);
+    color: #dbeafe;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.style-chips button[aria-pressed="true"] {
+    background: rgba(99, 102, 241, 0.45);
+    border-color: rgba(129, 140, 248, 0.8);
+}
+
+.style-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.style-select select {
+    width: auto;
+    padding: 8px 10px;
+}
+
 /* ---------- loading pipeline ---------- */
 
 .loading-section {

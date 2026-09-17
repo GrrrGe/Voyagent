@@ -63,6 +63,7 @@ llm = ChatGroq(
 class TravelState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     user_query: str
+    travel_style: str
     flight_results: str
     hotel_results: str
     itinerary: str
@@ -95,12 +96,14 @@ def hotel_agent(state: TravelState):
 
 
 def itinerary_agent(state: TravelState):
+    style = (state.get("travel_style") or "").strip()
+    style_block = f"\nTraveler Style:\n{style}\n" if style else ""
     prompt = f"""
 Create a complete travel itinerary.
 
 User Query:
 {state['user_query']}
-
+{style_block}
 Flight Results:
 {state['flight_results']}
 
@@ -108,6 +111,7 @@ Hotel Results:
 {state['hotel_results']}
 
 Make the itinerary practical, budget-aware, and easy to follow.
+Shape activity choices to the traveler style when one is given.
 """
 
     response = llm.invoke([
@@ -124,12 +128,14 @@ Make the itinerary practical, budget-aware, and easy to follow.
 
 
 def final_agent(state: TravelState):
+    style = (state.get("travel_style") or "").strip()
+    style_block = f"\nTraveler Style:\n{style}\n" if style else ""
     final_prompt = f"""
 Generate the final travel response for the user.
 
 User Request:
 {state['user_query']}
-
+{style_block}
 Flights:
 {state['flight_results']}
 
@@ -197,13 +203,14 @@ travel_graph = graph.compile(checkpointer=checkpointer)
 
 
 
-def run_travel_agent(user_input: str, thread_id: str | None = None):
+def run_travel_agent(user_input: str, thread_id: str | None = None,
+                     travel_style: str | None = None):
     if not thread_id:
         thread_id = f"user_{uuid.uuid4().hex}"
 
     config = {"configurable": {"thread_id": thread_id}}
 
-    result = travel_graph.invoke({"messages": [HumanMessage(content=user_input)],"user_query": user_input,"flight_results": "","hotel_results": "","itinerary": "","llm_calls": 0},config=config)
+    result = travel_graph.invoke({"messages": [HumanMessage(content=user_input)],"user_query": user_input,"travel_style": travel_style or "","flight_results": "","hotel_results": "","itinerary": "","llm_calls": 0},config=config)
 
     final_answer = result["messages"][-1].content
 
