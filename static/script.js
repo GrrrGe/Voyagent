@@ -1,10 +1,25 @@
 let currentThreadId = localStorage.getItem("voyagent_thread_id") || null;
-let styleUserId = localStorage.getItem("voyagent_style_id") || null;
 const styleVibes = new Set();
 let latestAnswerMarkdown = "";
 let loadingTimer = null;
 
 const LOADING_STEPS = ["flight", "hotel", "itinerary", "final"];
+
+function syncStyleToMessage() {
+    const input = document.getElementById("userInput");
+    if (!input) return;
+    const clean = input.value.replace(/Travel style:[^.]*\.\s*/i, "").trim();
+    if (!styleVibes.size) {
+        if (input.value !== clean) {
+            input.value = clean;
+            updateCharCount();
+        }
+        return;
+    }
+    const sentence = `Travel style: ${[...styleVibes].join(", ")}.`;
+    input.value = clean ? `${clean} ${sentence}` : sentence;
+    updateCharCount();
+}
 
 function initStylePicker() {
     const box = document.getElementById("styleChips");
@@ -19,6 +34,7 @@ function initStylePicker() {
                 if (styleVibes.has(vibe)) styleVibes.delete(vibe);
                 else if (styleVibes.size < 4) styleVibes.add(vibe);
                 button.setAttribute("aria-pressed", String(styleVibes.has(vibe)));
+                syncStyleToMessage();
             });
             return button;
         }));
@@ -27,31 +43,6 @@ function initStylePicker() {
         .then((response) => response.json())
         .then((spec) => render(spec.vibes || ["food", "art", "history", "walking", "nature", "shopping", "nightlife"]))
         .catch(() => render(["food", "art", "history", "walking", "nature", "shopping", "nightlife"]));
-}
-
-async function resolveStyleUser() {
-    const extra = document.getElementById("styleExtra");
-    const freeText = extra ? extra.value.trim() : "";
-    if (!styleVibes.size && !freeText) return styleUserId;
-    try {
-        const response = await fetch("/api/personality/quick", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                user_id: styleUserId,
-                vibes: [...styleVibes],
-                free_text: freeText
-            })
-        });
-        const profile = await response.json();
-        if (response.ok && profile.user_id) {
-            styleUserId = profile.user_id;
-            localStorage.setItem("voyagent_style_id", styleUserId);
-        }
-    } catch {
-        /* Style is optional; travel without it. */
-    }
-    return styleUserId;
 }
 
 document.addEventListener("DOMContentLoaded", initStylePicker);
@@ -225,7 +216,6 @@ async function sendMessage() {
     setLoading(true);
 
     try {
-        const style = await resolveStyleUser();
         const response = await fetch("/api/travel", {
             method: "POST",
             headers: {
@@ -233,8 +223,7 @@ async function sendMessage() {
             },
             body: JSON.stringify({
                 message: message,
-                thread_id: currentThreadId,
-                user_id: style
+                thread_id: currentThreadId
             })
         });
 
