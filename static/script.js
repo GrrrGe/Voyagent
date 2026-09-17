@@ -332,6 +332,49 @@ function downloadPDF() {
     });
 }
 
+async function generateBrochure() {
+    if (!currentThreadId) {
+        showError("Plan a trip first, then generate its brochure.");
+        return;
+    }
+    const button = document.getElementById("brochureBtn");
+    const oldText = button ? button.textContent : "";
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Building brochure...";
+    }
+    hideError();
+    try {
+        const started = await fetch("/api/brochure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ thread_id: currentThreadId })
+        }).then((response) => response.json());
+        if (!started.job_id) throw new Error("Could not start the brochure.");
+        for (let attempt = 0; attempt < 60; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+            const status = await fetch(`/api/brochure/${started.job_id}`)
+                .then((response) => response.json());
+            if (status.status === "ready") {
+                if (button) button.textContent = "Downloading...";
+                window.location.href = status.download_url;
+                break;
+            }
+            if (status.status === "failed") {
+                throw new Error(status.error || "Brochure failed.");
+            }
+            if (button) button.textContent = `Building brochure... (${status.stops || 0} stops)`;
+        }
+    } catch (error) {
+        showError(error.message || "Could not build the brochure.");
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = oldText;
+        }
+    }
+}
+
 async function checkApiStatus() {
     const statusEl = document.getElementById("apiStatus");
     const dot = statusEl.querySelector(".status-dot");
