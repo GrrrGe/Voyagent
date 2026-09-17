@@ -10,11 +10,15 @@ const examples = {
   Paris: 'Plan 4 days in Paris from Toronto under $1600 for 1 traveler, with art and history.'
 };
 const key = 'voyagent.thread_id';
+const styleKey = 'voyagent.style_id';
 let threadId = null;
+let styleId = null;
 let plan = null;
 let busy = false;
 let toastTimer;
+const styleVibes = new Set();
 try { threadId = localStorage.getItem(key); } catch { /* Storage can be disabled. */ }
+try { styleId = localStorage.getItem(styleKey); } catch { /* Storage can be disabled. */ }
 const E = (tag, className = '', text = '') => {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -71,13 +75,48 @@ function saveThread(value) {
   threadId = value;
   try { value ? localStorage.setItem(key, value) : localStorage.removeItem(key); } catch { toast('Browser storage is unavailable. Keep this page open to continue your trip.'); }
 }
+async function styleUserId() {
+  if (!styleVibes.size) return styleId;
+  try {
+    const response = await request('/api/personality/quick', {method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: styleId, vibes: [...styleVibes],
+        pace: $('style-pace')?.value, budget: $('style-budget')?.value})});
+    const profile = await response.json();
+    styleId = profile.user_id;
+    try { localStorage.setItem(styleKey, styleId); } catch { /* Storage can be disabled. */ }
+    return styleId;
+  } catch { return styleId; }
+}
+function initStylePicker() {
+  const box = $('style-chips');
+  if (!box) return;
+  const render = (vibes) => {
+    box.replaceChildren(...vibes.map(vibe => {
+      const button = E('button', '', vibe);
+      button.type = 'button';
+      button.setAttribute('aria-pressed', String(styleVibes.has(vibe)));
+      button.addEventListener('click', () => {
+        if (styleVibes.has(vibe)) styleVibes.delete(vibe);
+        else if (styleVibes.size < 4) styleVibes.add(vibe);
+        else { toast('Pick up to 4 vibes.'); return; }
+        button.setAttribute('aria-pressed', String(styleVibes.has(vibe)));
+      });
+      return button;
+    }));
+  };
+  request('/api/personality/quick').then(response => response.json())
+    .then(spec => render(spec.vibes || ['food', 'art', 'history', 'walking', 'nature', 'shopping', 'nightlife']))
+    .catch(() => render(['food', 'art', 'history', 'walking', 'nature', 'shopping', 'nightlife']));
+}
 async function submitTrip(message, fresh = false) {
   if (busy) return;
   if (!$('planner')) { location.href = `/?message=${encodeURIComponent(message)}`; return; }
   scrollToPlanner();
   $('error').hidden = true; setBusy(true);
   try {
-    const response = await request('/api/travel', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({message, thread_id: fresh ? null : threadId})});
+    const style = await styleUserId();
+    const response = await request('/api/travel', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({message, thread_id: fresh ? null : threadId, user_id: style})});
     plan = await response.json(); saveThread(plan.thread_id); renderPlan();
     const replan = $('replan-message');
     if (replan) replan.value = '';
@@ -240,6 +279,7 @@ function setDefaultDate() {
 }
 async function init() {
   if (!$('planner')) return;
+  initStylePicker();
   setDefaultDate();
   const params = new URLSearchParams(location.search);
   const example = params.get('example');

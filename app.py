@@ -58,7 +58,8 @@ async def headers(request, call_next):
         body = bytearray()
         async for chunk in request.stream():
             body.extend(chunk)
-            if len(body) > 16000:
+            limit = 500000 if request.url.path.startswith('/api/personality') else 16000
+            if len(body) > limit:
                 return JSONResponse({'detail': 'Request is too large.'}, 413)
         request._body = bytes(body)
     response = await call_next(request)
@@ -71,6 +72,29 @@ class TravelRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     message: str = Field(min_length=3, max_length=2000)
     thread_id: UUID | None = None
+    user_id: str | None = Field(default=None, max_length=64)
+
+
+class PersonalityImport(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    user_id: str | None = Field(default=None, max_length=64)
+    takeout: dict
+
+
+class QuizSubmit(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    user_id: str | None = Field(default=None, max_length=64)
+    answers: dict
+
+
+class QuickStyle(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    user_id: str | None = Field(default=None, max_length=64)
+    vibes: list[str] = Field(default_factory=list, max_length=4)
+    pace: str | None = Field(default=None, max_length=16)
+    budget: str | None = Field(default=None, max_length=16)
+    setting: str | None = Field(default=None, max_length=16)
+    free_text: str | None = Field(default=None, max_length=500)
 
 
 def config_for(request, thread_id):
@@ -108,7 +132,15 @@ def travel(body: TravelRequest, request: Request):
             from agents.research import parse_trip
             previous = app.state.graph.get_state(config).values
             parse_trip(body.message, previous.get('trip'))
-            result = app.state.graph.invoke({'message': body.message, 'complete': False}, config)
+            initial = {'message': body.message, 'complete': False}
+            if body.user_id:
+                from tools.user_embedding import load_profile
+                profile = load_profile(body.user_id)
+                if profile:
+                    initial.update({'user_id': body.user_id,
+                                    'personality': profile.get('card'),
+                                    'user_vec': profile.get('vector')})
+            result = app.state.graph.invoke(initial, config)
         except ValueError as exc:
             if previous.get('complete'):
                 app.state.graph.update_state(config, previous, as_node='report_agent')
@@ -128,6 +160,92 @@ def saved(thread_id: UUID, request: Request):
     if not state or not state.get('complete'):
         raise HTTPException(404, 'No completed trip found in this browser session.')
     return dict(state, thread_id=str(thread_id))
+
+@app.post('/api/personality/import')
+def personality_import(body: PersonalityImport):
+    """Build a traveler personality from Google Maps Takeout (local only)."""
+    from tools.personality_takeout import parse_takeout
+    from tools.user_embedding import embed_personality, save_profile
+    try:
+        card = parse_takeout(body.takeout)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    user_id = body.user_id or str(uuid4())
+    vector = embed_personality(card)
+    save_profile(user_id, card, vector)
+    return {'user_id': user_id, 'card': card, 'dim': len(vector),
+            'embedding_preview': vector[:8]}
+
+@app.get('/api/personality/quick')
+def personality_quick_spec():
+    """Fast style picker spec: chips with defaults, nothing required."""
+    from tools.personality_quick import quick_spec
+    return quick_spec()
+
+@app.post('/api/personality/quick')
+def personality_quick_submit(body: QuickStyle):
+    """One-call style save: tap chips (or skip) and get a profile id."""
+    from tools.personality_quick import parse_quick
+    from tools.user_embedding import embed_personality, save_profile
+    try:
+        card = parse_quick({"vibes": body.vibes, "pace": body.pace,
+                            "budget": body.budget, "setting": body.setting,
+                            "free_text": body.free_text or ""})
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    user_id = body.user_id or str(uuid4())
+    vector = embed_personality(card)
+    save_profile(user_id, card, vector)
+    return {'user_id': user_id, 'card': card, 'dim': len(vector),
+            'embedding_preview': vector[:8]}
+
+@app.get('/api/personality/quiz')
+def personality_quiz():
+    """Short prerequisite quiz spec (six questions)."""
+    from tools.personality_quiz import quiz_questions
+    return {'questions': quiz_questions()}
+
+@app.post('/api/personality/quiz')
+def personality_quiz_submit(body: QuizSubmit):
+    """Score quiz answers into a personality embedding profile."""
+    from tools.personality_quiz import score_answers
+    from tools.user_embedding import embed_personality, save_profile
+    try:
+        card = score_answers(body.answers)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    user_id = body.user_id or str(uuid4())
+    vector = embed_personality(card)
+    save_profile(user_id, card, vector)
+    return {'user_id': user_id, 'card': card, 'dim': len(vector),
+            'embedding_preview': vector[:8]}
+
+@app.get('/api/personality/benchmark/retrieval')
+def retrieval_benchmark(limit: int = 4):
+    """BM25 vs vector vs hybrid vs hybrid-reranked on catalog queries."""
+    from tools.retrieval_benchmark import benchmark
+    limit = max(1, min(limit, 10))
+    return benchmark(limit=limit)
+
+@app.get('/api/personality/{user_id}')
+def personality_get(user_id: str):
+    from tools.user_embedding import load_profile
+    profile = load_profile(user_id)
+    if not profile:
+        raise HTTPException(404, 'No personality found for this user.')
+    card = profile.get('card', {})
+    vector = profile.get('vector', [])
+    return {'user_id': user_id, 'card': card, 'dim': len(vector),
+            'embedding_preview': vector[:8]}
+
+@app.get('/api/personality/benchmark/hnsw')
+def personality_benchmark(num_users: int = 2000, dim: int = 64, k: int = 10):
+    """Brute-force vs HNSW recall/latency on synthetic users."""
+    from tools.user_hnsw import benchmark
+    num_users = max(100, min(num_users, 20000))
+    dim = max(16, min(dim, 256))
+    k = max(1, min(k, 50))
+    return benchmark(num_users=num_users, dim=dim, k=k)
 
 @app.get('/api/travel/{thread_id}/pdf')
 def pdf(thread_id: UUID, request: Request):

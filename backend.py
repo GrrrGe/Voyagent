@@ -5,6 +5,9 @@ from agents import research, booking, itinerary, disruption, budget_agent, repor
 
 class TravelState(TypedDict, total=False):
     message: str
+    user_id: str
+    personality: dict
+    user_vec: list
     trip: dict
     flight_results: list
     hotel_results: list

@@ -41,3 +41,11 @@ footer{background:var(--forest-deep)}
 .footer-stack{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:48px;padding-top:24px;border-top:1px solid var(--forest);font-size:var(--caption)}
 .footer-stack>span:first-child{font-weight:650;font-size:var(--body)}
 .planner-grid.single{grid-template-columns:minmax(0,1fr)}
+.style-picker{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 4px;font-size:var(--caption);color:var(--muted)}
+.style-label{margin-right:4px}
+.style-chips{display:flex;flex-wrap:wrap;gap:8px}
+.style-chips button{background:var(--soft-canvas);padding:10px 16px;border-radius:var(--pill);min-height:44px;font-size:var(--caption)}
+.style-chips button:hover{background:var(--hairline)}
+.style-chips button[aria-pressed="true"]{background:var(--ink);color:var(--on-primary)}
+.style-select{display:inline-flex;align-items:center;gap:8px}
+.style-select select{width:auto;min-height:44px;padding:10px 12px}

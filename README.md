@@ -16,6 +16,9 @@ Turn a trip request into flight research, hotel options, a day-by-day itinerary,
 - Runs six specialized agents in a LangGraph `StateGraph`: flight research, hotel research, itinerary, disruption replan, budget check, and report.
 - Retrieval-grounded generation: agents gather flight schedules, hotel research, and curated destination data first, then the LLM reasons over that retrieved context under strict JSON schemas.
 - Searches a persistent Chroma vector store with LangChain to ground every itinerary in embedded destination knowledge.
+- Builds a traveler personality from a fast style picker (tap up to 4 vibe chips, or skip), a six-question quiz, or Google Maps Takeout as a local personality card plus a 256-d user embedding in the same space as destination vectors.
+- Personalizes ranking with exact brute-force cosine by default and an explicit HNSW index (`hnswlib`, optional) with recall/latency benchmarks to show when ANN is warranted.
+- Benchmarks retrieval with BM25 vs vector vs hybrid RRF vs hybrid plus personality rerank, reporting recall, MRR, and latency per query.
 - Produces Overview, Flights, Hotels, Itinerary, and Budget tabs.
 - Persists conversation checkpoints in PostgreSQL with per-thread resumption.
 - Replans affected days for rain, flight delays, or cancellations.
@@ -97,7 +100,15 @@ Trips run 2 to 14 days for 1 to 8 travelers. The parser handles destinations, da
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/travel` | Create or continue a trip using `{message, thread_id}` |
+| `POST` | `/api/travel` | Create or continue a trip using `{message, thread_id, user_id?}` |
+| `POST` | `/api/personality/import` | Build a personality from Takeout JSON using `{user_id?, takeout}` |
+| `GET` | `/api/personality/quick` | Fetch the fast style chip spec with defaults |
+| `POST` | `/api/personality/quick` | Save style chips using `{user_id?, vibes[], pace?, budget?, setting?, free_text?}` |
+| `GET` | `/api/personality/quiz` | Fetch the six-question prerequisite quiz spec |
+| `POST` | `/api/personality/quiz` | Score quiz answers using `{user_id?, answers}` |
+| `GET` | `/api/personality/{user_id}` | Fetch a saved personality card and embedding preview |
+| `GET` | `/api/personality/benchmark/hnsw` | Brute-force vs HNSW recall/latency on synthetic users |
+| `GET` | `/api/personality/benchmark/retrieval` | BM25 vs vector vs hybrid vs reranked recall, MRR, latency |
 | `GET` | `/api/travel/{thread_id}` | Restore a completed trip within the browser session |
 | `GET` | `/api/travel/{thread_id}/pdf` | Download the saved plan |
 | `GET` | `/health` | Check storage and provider modes |

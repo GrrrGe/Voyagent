@@ -29,6 +29,24 @@
       <form id="hero-form" class="trip-input">
         <label class="sr-only" for="trip-message">Describe your trip</label>
         <textarea id="trip-message" rows="3" required maxlength="800" placeholder="Example: Plan a complete 7 day Japan trip from Chennai under $2,200."></textarea>
+        <div class="style-picker" aria-label="Travel style, optional">
+          <span class="style-label">Style, optional:</span>
+          <div id="style-chips" class="style-chips" role="group" aria-label="Pick up to 4 travel vibes"></div>
+          <label class="style-select">Pace
+            <select id="style-pace" aria-label="Trip pace">
+              <option value="slow">Slow</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="fast">Fast</option>
+            </select>
+          </label>
+          <label class="style-select">Spend
+            <select id="style-budget" aria-label="Trip spend">
+              <option value="budget">Budget</option>
+              <option value="mid" selected>Mid</option>
+              <option value="midplus">Mid-plus</option>
+            </select>
+          </label>
+        </div>
         <div class="input-bottom"><span><span aria-hidden="true">✳</span> <span id="char-count">0 / 800</span> · Ctrl + Enter to send.</span><button class="button primary" type="submit">Generate Plan <span aria-hidden="true">↗</span></button></div>
       </form>
       <div class="suggestions"><span>Or start here</span><button data-example="Japan">🗾 Japan Trip</button><button data-example="Dubai">🏙️ Dubai Trip</button><button data-example="Thailand">🏝️ Thailand Trip</button><button data-example="Flights">🌍 Global Flights</button></div>

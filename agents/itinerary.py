@@ -15,6 +15,15 @@ def feasible(days):
 
 def run(state):
     trip = state['trip']
+    # Merge saved personality interests so Maps taste biases retrieval even
+    # before the LLM ordering step.
+    personality = state.get('personality') or {}
+    if personality.get('interests') and 'interests' in trip:
+        boosted = list(dict.fromkeys(list(trip.get('interests', [])) + [
+            name for name, score in sorted(personality['interests'].items(),
+                                           key=lambda kv: kv[1], reverse=True)[:2]
+            if score and score >= 0.5 and name in ('food', 'art', 'history', 'walking')]))
+        trip = {**trip, 'interests': boosted}
     clusters = CITIES[trip['destination']]['clusters']
     try:
         from tools.knowledge import retrieve
@@ -22,6 +31,19 @@ def run(state):
     except Exception:
         grounding = {'order': list(range(len(clusters))), 'areas': []}
     order = provider().order({**trip, 'grounding': grounding['areas']}, len(clusters))
+    # Personalize: blend catalog order with user-embedding similarity.
+    # Exact brute-force cosine is the default; HNSW is measured separately.
+    user_vec = state.get('user_vec')
+    if user_vec:
+        try:
+            from tools.knowledge import embedding_function
+            from tools.user_hnsw import rerank_areas
+            area_texts = [f"{trip['destination']} {area} {p1} {p2} {indoor}"
+                          for area, p1, p2, indoor in clusters]
+            order, _scores = rerank_areas(order, area_texts, user_vec,
+                                          embedding_function().embed_query, alpha=0.3)
+        except Exception:
+            pass
     days = []
     for i in range(trip['days']):
         area, place1, place2, indoor = clusters[order[i % len(order)]]
