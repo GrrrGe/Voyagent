@@ -675,7 +675,8 @@ textarea::placeholder {
 }
 
 .copy-btn,
-.download-btn {
+.download-btn,
+.brochure-btn {
     border: none;
     border-radius: 12px;
     padding: 10px 16px;
@@ -704,6 +705,21 @@ textarea::placeholder {
 .download-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 16px 36px rgba(34, 197, 94, 0.35);
+}
+
+.brochure-btn {
+    border: 1px solid var(--border-strong);
+    background: rgba(99, 102, 241, 0.18);
+    color: var(--text);
+}
+
+.brochure-btn:hover {
+    background: rgba(99, 102, 241, 0.32);
+}
+
+.brochure-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 .result-tabs {

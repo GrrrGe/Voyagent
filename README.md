@@ -252,6 +252,9 @@ DEFAULT_ORIGIN=YYZ
 | `GET` | `/api/personality/{user_id}` | Fetches a saved style card and embedding preview |
 | `GET` | `/api/personality/benchmark/hnsw` | Brute-force vs HNSW recall and latency on synthetic users |
 | `GET` | `/api/personality/benchmark/retrieval` | BM25 vs vector vs hybrid RRF vs reranked recall, MRR, latency |
+| `POST` | `/api/brochure` | Starts a brochure build for a completed trip (`{thread_id}`) |
+| `GET` | `/api/brochure/{job_id}` | Polls brochure status; returns a download URL when ready |
+| `GET` | `/api/brochure/{job_id}/pdf` | Downloads the finished brochure PDF |
 | `GET` | `/health` | Health check |
 
 ### `POST /api/travel`
@@ -285,8 +288,11 @@ DEFAULT_ORIGIN=YYZ
 On failure, the API returns a `4xx`/`5xx` status with `{"success": false, "error": "..."}`.
 
 ### Traveler style (optional)
-
 The planner UI offers a one-row style picker below the trip request: tap up to 4 vibe chips (food, art, history, walking, nature, shopping, nightlife) and they are written into the request box itself as a "Travel style: ..." sentence, which the agents read like any other detail. Tapping again removes it. There are no extra boxes to fill; skipping chips plans exactly as before. Extra free-text filters can still be typed directly in the request or saved via the style API. Saving style through the API creates a local profile: a human-readable card plus a 256-d offline embedding stored under `.data/users/`. Passing its `user_id` with `/api/travel` injects a style line, including the verbatim extras, into the itinerary and final-report prompts. A six-question quiz and Google Maps Takeout import produce the same profile format. Benchmarks at `/api/personality/benchmark/hnsw` (brute-force vs HNSW) and `/api/personality/benchmark/retrieval` (BM25 vs vector vs hybrid RRF vs personality rerank) document the retrieval tradeoffs. No new dependencies and no API keys are needed for style or benchmarks.
+
+### Downloadable brochure with route map
+
+The result panel offers Generate brochure. It runs as a background job (`POST /api/brochure`, poll `GET /api/brochure/{job_id}`, download the PDF), so slow geocoding and tile fetches never block the UI. The PDF contains a true-scale OpenStreetMap route map — numbered stops in visit order, route polyline, scale bar computed from ground resolution, and the required "Map data (c) OpenStreetMap contributors" attribution — plus trimmed day-by-day summaries. Free-only boundaries are enforced in code: Nominatim at max 1 request per second with a disk cache, OSM tiles with a valid User-Agent and disk cache, and Pillow plus reportlab for rendering. Place extraction from the itinerary is heuristic; misses degrade to fewer pins, never an error.
 
 ---
 
