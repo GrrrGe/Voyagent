@@ -142,6 +142,25 @@
                 <span class="hint">Ctrl + Enter to send</span>
             </div>
 
+            <div class="style-picker" aria-label="Travel style, optional">
+                <span class="style-label">Style, optional:</span>
+                <div id="styleChips" class="style-chips" role="group" aria-label="Pick up to 4 travel vibes"></div>
+                <label class="style-select">Pace
+                    <select id="stylePace" aria-label="Trip pace">
+                        <option value="slow">Slow</option>
+                        <option value="moderate" selected>Moderate</option>
+                        <option value="fast">Fast</option>
+                    </select>
+                </label>
+                <label class="style-select">Spend
+                    <select id="styleBudget" aria-label="Trip spend">
+                        <option value="budget">Budget</option>
+                        <option value="mid" selected>Mid</option>
+                        <option value="midplus">Mid-plus</option>
+                    </select>
+                </label>
+            </div>
+
             <div class="quick-prompts">
                 <button onclick="setPrompt('Plan a complete 7 days Paris trip from Canada including flights, hotels and sightseeing under CAD 2,500.')">
                     🇫🇷 Paris Trip
