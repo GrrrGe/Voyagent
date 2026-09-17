@@ -57,10 +57,6 @@ class TakeoutImport(BaseModel):
     takeout: dict
 
 
-class BrochureRequest(BaseModel):
-    thread_id: str
-
-
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -209,90 +205,6 @@ async def retrieval_benchmark(limit: int = 4):
     from tools.retrieval_benchmark import benchmark
     limit = max(1, min(limit, 10))
     return benchmark(limit=limit)
-
-
-import threading as _threading
-import uuid as _uuid
-
-_brochure_jobs = {}
-_brochure_lock = _threading.Lock()
-
-
-def _run_brochure_job(job_id, thread_id):
-    try:
-        from backend import ensure_graph
-        from tools.brochure import (build_pdf, extract_stops, render_map,
-                                    split_summaries)
-        from tools.geocode import geocode_stops
-        state = ensure_graph().get_state({"configurable": {"thread_id": thread_id}}).values
-        if not state or not state.get("itinerary"):
-            raise ValueError("No completed trip found for this thread.")
-        user_query = state.get("user_query", "")
-        try:
-            from tools.tavily_tool import hotel_destination
-            city = hotel_destination(user_query) or ""
-        except Exception:
-            city = ""
-        itinerary = state.get("itinerary", "")
-        answer = ""
-        messages = state.get("messages", []) or []
-        if messages:
-            try:
-                answer = getattr(messages[-1], "content", "") or ""
-            except Exception:
-                answer = ""
-        stops = extract_stops(itinerary, answer)
-        located = geocode_stops(stops, city=city)
-        map_png, zoom = render_map(located)
-        summaries = split_summaries(itinerary)
-        pdf = build_pdf("Voyagent Travel Plan", user_query[:100], map_png, zoom,
-                        summaries, [name for name, _, _ in located])
-        with _brochure_lock:
-            _brochure_jobs[job_id].update({"status": "ready", "pdf": pdf,
-                                           "stops": len(located)})
-    except Exception as exc:
-        with _brochure_lock:
-            _brochure_jobs[job_id].update({"status": "failed", "error": str(exc)[:300]})
-
-
-@app.post("/api/brochure")
-async def brochure_start(body: BrochureRequest):
-    job_id = f"brochure_{_uuid.uuid4().hex[:12]}"
-    with _brochure_lock:
-        _brochure_jobs[job_id] = {"status": "working", "thread_id": body.thread_id}
-    worker = _threading.Thread(target=_run_brochure_job, args=(job_id, body.thread_id),
-                               daemon=True)
-    worker.start()
-    return {"job_id": job_id, "status": "working"}
-
-
-@app.get("/api/brochure/{job_id}")
-async def brochure_status(job_id: str):
-    with _brochure_lock:
-        job = dict(_brochure_jobs.get(job_id, {}))
-    if not job:
-        return JSONResponse(status_code=404, content={"success": False, "error": "Unknown job."})
-    response = {"job_id": job_id, "status": job["status"], "stops": job.get("stops", 0)}
-    if job["status"] == "failed":
-        response["error"] = job.get("error", "Brochure failed.")
-    if job["status"] == "ready":
-        response["download_url"] = f"/api/brochure/{job_id}/pdf"
-    return response
-
-
-@app.get("/api/brochure/{job_id}/pdf")
-async def brochure_pdf(job_id: str):
-    from fastapi.responses import Response
-    with _brochure_lock:
-        job = _brochure_jobs.get(job_id)
-        pdf = job.get("pdf") if job else None
-    if not job:
-        return JSONResponse(status_code=404, content={"success": False, "error": "Unknown job."})
-    if job["status"] != "ready" or not pdf:
-        return JSONResponse(status_code=409,
-                            content={"success": False, "error": "Brochure is not ready yet."})
-    return Response(pdf, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="Voyagent-brochure-{job_id}.pdf"'})
 
 
 @app.get("/health")
