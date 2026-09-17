@@ -9,6 +9,7 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 from typing import TypedDict, Annotated
 import operator
+import threading
 import uuid
 
 import psycopg
@@ -190,16 +191,53 @@ graph.add_edge("final_agent", END)
 # =========================
 DATABASE_URL = get_database_url()
 
-_conn = psycopg.connect(
-    DATABASE_URL,
-    autocommit=True,
-    row_factory=dict_row
-)
+_conn = None
+travel_graph = None
+_graph_lock = threading.Lock()
 
-checkpointer = PostgresSaver(_conn)
-checkpointer.setup()
 
-travel_graph = graph.compile(checkpointer=checkpointer)
+def _connect():
+    """Open a fresh connection and compile the graph against it."""
+    global _conn, travel_graph
+    conn = psycopg.connect(
+        DATABASE_URL,
+        autocommit=True,
+        row_factory=dict_row,
+    )
+    checkpointer = PostgresSaver(conn)
+    checkpointer.setup()
+    _conn = conn
+    travel_graph = graph.compile(checkpointer=checkpointer)
+
+
+def ensure_graph():
+    """Return a working graph, reconnecting when Postgres closed the link.
+
+    Free-tier databases sleep and drop idle connections ("the connection
+    is closed"). Without this, the first idle timeout permanently breaks
+    every request until the next redeploy.
+    """
+    with _graph_lock:
+        needs_reconnect = _conn is None or travel_graph is None
+        if not needs_reconnect:
+            try:
+                if _conn.closed:
+                    needs_reconnect = True
+                else:
+                    _conn.execute("SELECT 1")
+            except Exception:
+                needs_reconnect = True
+        if needs_reconnect:
+            try:
+                if _conn is not None:
+                    _conn.close()
+            except Exception:
+                pass
+            _connect()
+        return travel_graph
+
+
+_connect()
 
 
 
@@ -210,7 +248,15 @@ def run_travel_agent(user_input: str, thread_id: str | None = None,
 
     config = {"configurable": {"thread_id": thread_id}}
 
-    result = travel_graph.invoke({"messages": [HumanMessage(content=user_input)],"user_query": user_input,"travel_style": travel_style or "","flight_results": "","hotel_results": "","itinerary": "","llm_calls": 0},config=config)
+    graph_handle = ensure_graph()
+    payload = {"messages": [HumanMessage(content=user_input)],"user_query": user_input,"travel_style": travel_style or "","flight_results": "","hotel_results": "","itinerary": "","llm_calls": 0}
+    try:
+        result = graph_handle.invoke(payload, config=config)
+    except Exception:
+        # The link may have dropped between the health check and the
+        # invoke; reconnect once and retry before giving up.
+        graph_handle = ensure_graph()
+        result = graph_handle.invoke(payload, config=config)
 
     final_answer = result["messages"][-1].content
 
