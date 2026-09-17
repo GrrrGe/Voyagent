@@ -30,18 +30,17 @@ function initStylePicker() {
 }
 
 async function resolveStyleUser() {
-    if (!styleVibes.size) return styleUserId;
+    const extra = document.getElementById("styleExtra");
+    const freeText = extra ? extra.value.trim() : "";
+    if (!styleVibes.size && !freeText) return styleUserId;
     try {
-        const pace = document.getElementById("stylePace");
-        const budget = document.getElementById("styleBudget");
         const response = await fetch("/api/personality/quick", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 user_id: styleUserId,
                 vibes: [...styleVibes],
-                pace: pace ? pace.value : null,
-                budget: budget ? budget.value : null
+                free_text: freeText
             })
         });
         const profile = await response.json();

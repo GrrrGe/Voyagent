@@ -582,6 +582,11 @@ textarea::placeholder {
     padding: 8px 10px;
 }
 
+.style-extra {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
 /* ---------- loading pipeline ---------- */
 
 .loading-section {

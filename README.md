@@ -245,7 +245,7 @@ DEFAULT_ORIGIN=YYZ
 | `GET` | `/` | Serves the Voyagent UI (`templates/index.html`) |
 | `POST` | `/api/travel` | Runs the multi-agent pipeline for a travel request |
 | `GET` | `/api/personality/quick` | Fast travel-style chip spec with defaults |
-| `POST` | `/api/personality/quick` | Saves style chips (`vibes[]`, pace, budget, setting, free text) and returns a profile id |
+| `POST` | `/api/personality/quick` | Saves style chips plus free-text extras and returns a profile id |
 | `GET` | `/api/personality/quiz` | Six-question style quiz spec |
 | `POST` | `/api/personality/quiz` | Scores quiz answers into a profile id |
 | `POST` | `/api/personality/import` | Builds a profile from Google Maps Takeout JSON |
@@ -286,7 +286,7 @@ On failure, the API returns a `4xx`/`5xx` status with `{"success": false, "error
 
 ### Traveler style (optional)
 
-The planner UI offers a one-row style picker: tap up to 4 vibe chips (food, art, history, walking, nature, shopping, nightlife) with pace and spend preselected, or skip it entirely. Saving style creates a local profile: a human-readable card plus a 256-d offline embedding stored under `.data/users/`. Passing its `user_id` with `/api/travel` injects a style line into the itinerary and final-report prompts. A six-question quiz and Google Maps Takeout import produce the same profile format. Benchmarks at `/api/personality/benchmark/hnsw` (brute-force vs HNSW) and `/api/personality/benchmark/retrieval` (BM25 vs vector vs hybrid RRF vs personality rerank) document the retrieval tradeoffs. No new dependencies and no API keys are needed for style or benchmarks.
+The planner UI offers a one-row style picker below the trip request: tap up to 4 vibe chips (food, art, history, walking, nature, shopping, nightlife) and optionally add extra filters in your own words ("vegetarian food, late nights, no museums"), or skip it entirely and generate. Saving style creates a local profile: a human-readable card plus a 256-d offline embedding stored under `.data/users/`. Passing its `user_id` with `/api/travel` injects a style line, including the verbatim extras, into the itinerary and final-report prompts. A six-question quiz and Google Maps Takeout import produce the same profile format. Benchmarks at `/api/personality/benchmark/hnsw` (brute-force vs HNSW) and `/api/personality/benchmark/retrieval` (BM25 vs vector vs hybrid RRF vs personality rerank) document the retrieval tradeoffs. No new dependencies and no API keys are needed for style or benchmarks.
 
 ---
 

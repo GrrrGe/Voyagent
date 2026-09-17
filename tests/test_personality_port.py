@@ -27,6 +27,15 @@ def test_quick_vibes_score():
     assert card["pace"] == "fast"
 
 
+def test_quick_extra_filters_kept_verbatim():
+    card = parse_quick({"vibes": [], "free_text": "vegetarian food,  no museums "})
+    assert card["extra"] == "vegetarian food, no museums"
+    assert card["interests"]["food"] == 1.0
+    line = style_line(card)
+    assert "vegetarian food, no museums" in line
+    assert "vegetarian" in personality_to_text(card)
+
+
 def test_quiz_scores():
     answers = {"food": "food_first", "culture": "museum", "pace": "pace_moderate",
                "setting": "mixed", "budget": "mid", "evening": "shopping_stroll"}
