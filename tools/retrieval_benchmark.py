@@ -15,21 +15,43 @@ B = 0.75
 RRF_K = 60
 DIMENSIONS = 64
 
-# Built-in corpus: short destination blurbs with stable ids.
-CORPUS = [
-    {"id": "tokyo-asakusa", "text": "Tokyo Japan. Asakusa area. Visit Senso-ji temple. Riverside walk. Museum indoor alternative."},
-    {"id": "tokyo-shibuya", "text": "Tokyo Japan. Shibuya area. Meiji Jingu grounds. Crossing walk. Museum indoor alternative."},
-    {"id": "tokyo-ueno", "text": "Tokyo Japan. Ueno area. Ueno Park. Market walk. Nature museum indoor alternative."},
-    {"id": "lisbon-alfama", "text": "Lisbon Portugal. Alfama area. Lanes walk. Viewpoint. Fado museum indoor alternative."},
-    {"id": "lisbon-belem", "text": "Lisbon Portugal. Belem area. Waterfront walk. Monument. Maritime museum indoor alternative."},
-    {"id": "paris-marais", "text": "Paris France. Le Marais area. Garden walk. Historic lanes. Museum indoor alternative."},
-    {"id": "paris-louvre", "text": "Paris France. Louvre area. Garden walk. Seine riverside. Museum indoor alternative."},
-    {"id": "paris-montmartre", "text": "Paris France. Montmartre area. Hill walk. Viewpoint. Museum indoor alternative."},
-    {"id": "dubai-marina", "text": "Dubai UAE. Marina area. Beach walk. Waterfront. Museum indoor alternative."},
-    {"id": "dubai-deira", "text": "Dubai UAE. Deira area. Souk lanes. Creek walk. Coffee museum indoor alternative."},
-    {"id": "tokyo-stay", "text": "Stay in Tokyo in the Asakusa area. Two guests per room. Taxes included in the estimate."},
-    {"id": "paris-stay", "text": "Stay in Paris near Canal Saint-Martin. Two guests per room. Taxes included in the estimate."},
+# Built-in corpus: 15 cities x 8 areas = 120 destination blurbs.
+# Queries paraphrase their target (synonyms, dropped area names) instead of
+# repeating its words, so ranking must work harder than keyword matching.
+CITIES = [
+    "Tokyo", "Lisbon", "Paris", "Dubai", "Rome", "Barcelona", "Bangkok",
+    "Marrakech", "Istanbul", "Kyoto", "Berlin", "Amsterdam", "Prague",
+    "Seoul", "Cairo",
 ]
+
+# (area slug, doc sentence, query sentence). Query sentences paraphrase the
+# doc: mostly synonyms, keeping one or two shared content words.
+AREAS = [
+    ("temples", "Ancient shrines with stone lanterns and incense stalls line the lanes.",
+     "Old temples, incense smoke, and traditional craft shops"),
+    ("waterfront", "Harbor promenade with ferry docks, seafood halls, and sunset decks.",
+     "Harbor walks, ferry rides, and seafood markets at dusk"),
+    ("museums", "Marble museums, quiet courtyards, and shaded sculpture gardens.",
+     "Art museums, peaceful courtyards, and statue parks"),
+    ("markets", "Covered bazaars, spice pyramids, and bargaining cloth merchants.",
+     "Indoor markets, spice stalls, and fabric sellers"),
+    ("viewpoint", "Steep chapels above tiled rooftops with a panoramic terrace.",
+     "Hilltop chapels, city panoramas, and sunset terraces"),
+    ("oldtown", "Cobblestone alleys, timber houses, and lantern-lit taverns.",
+     "Stone lanes, wooden houses, and cozy pubs"),
+    ("riverside", "Willow embankments, rental rowboats, and evening tea houses.",
+     "River walks, paddle boats, and tea rooms"),
+    ("gardens", "Walled flower gardens, gravel paths, and a glass palm house.",
+     "Botanical gardens, winding trails, and greenhouses"),
+]
+
+CORPUS = [
+    {"id": f"{city.lower()}-{slug}", "text": f"{city}. {doc}"}
+    for city in CITIES
+    for slug, doc, _ in AREAS
+]
+
+QUERY_AREAS = ("temples", "waterfront", "museums", "markets")
 
 
 def tokenize(text):
@@ -147,13 +169,18 @@ def retrieve_with_mode(query_text, query_vec, documents, doc_vectors, mode="hybr
 
 def _queries():
     texts = [d["text"] for d in CORPUS]
+    by_id = {d["id"]: i for i, d in enumerate(CORPUS)}
+    area_query = {slug: q for slug, _, q in AREAS}
     queries = []
-    for i, doc in enumerate(CORPUS):
-        if doc["id"].endswith("-stay"):
+    for doc in CORPUS:
+        city, slug = doc["id"].rsplit("-", 1) if "-" in doc["id"] else (doc["id"], "")
+        if slug not in QUERY_AREAS:
             continue
-        city = doc["text"].split(".")[0]
-        area = doc["text"].split(".")[1].strip()
-        queries.append({"text": f"{city} {area} areas to visit", "relevant": {i}})
+        city_name = next(c for c in CITIES if c.lower() == city)
+        queries.append({
+            "text": f"{city_name} {area_query[slug]}",
+            "relevant": {by_id[doc["id"]]},
+        })
     return texts, queries
 
 

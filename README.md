@@ -289,18 +289,19 @@ The planner UI offers a one-row style picker below the trip request: tap up to 4
 
 ### Benchmark results
 
-Retrieval (10 queries over a 12-document synthetic corpus, top 4):
+Retrieval (60 paraphrased queries over 120 synthetic destinations, top 4;
+queries use synonyms and drop area names instead of repeating doc words):
 
 | Method | Recall@4 | MRR | ms/query |
 |---|---|---|---|
-| BM25 | 1.0 | 1.0 | 0.248 |
-| Vector | 1.0 | 0.95 | 0.121 |
-| Hybrid RRF | 1.0 | 1.0 | 0.133 |
-| Hybrid + rerank | 1.0 | 1.0 | 0.164 |
+| BM25 | 1.0 | 1.0 | 0.727 |
+| Vector | 0.9667 | 0.7486 | 0.704 |
+| Hybrid RRF | 1.0 | 0.9833 | 0.725 |
+| Hybrid + rerank | 1.0 | 0.9833 | 0.883 |
 
-Hybrid matches BM25's 1.0 Recall@4 and MRR at nearly half the latency;
-vector-only is fastest but drops to 0.95 MRR. Recall saturates because the
-corpus is only 12 synthetic documents, so MRR and latency decide.
+Lexical BM25 leads outright; hashed-vector retrieval drops to 0.75 MRR on
+paraphrase, and RRF fusion recovers most of it (0.98) while keeping recall
+perfect. All four run sub-millisecond on this corpus size.
 
 User search (2,000 synthetic 64-d users, top 10, 20 queries): brute force
 7.8 ms/query with recall 1.0. `hnswlib` is not installed here, so the HNSW
