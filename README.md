@@ -287,6 +287,26 @@ On failure, the API returns a `4xx`/`5xx` status with `{"success": false, "error
 ### Traveler style (optional)
 The planner UI offers a one-row style picker below the trip request: tap up to 4 vibe chips (food, art, history, walking, nature, shopping, nightlife) and they are written into the request box itself as a "Travel style: ..." sentence, which the agents read like any other detail. Tapping again removes it. There are no extra boxes to fill; skipping chips plans exactly as before. Extra free-text filters can still be typed directly in the request or saved via the style API. Saving style through the API creates a local profile: a human-readable card plus a 256-d offline embedding stored under `.data/users/`. Passing its `user_id` with `/api/travel` injects a style line, including the verbatim extras, into the itinerary and final-report prompts. A six-question quiz and Google Maps Takeout import produce the same profile format. Benchmarks at `/api/personality/benchmark/hnsw` (brute-force vs HNSW) and `/api/personality/benchmark/retrieval` (BM25 vs vector vs hybrid RRF vs personality rerank) document the retrieval tradeoffs. No new dependencies and no API keys are needed for style or benchmarks.
 
+### Benchmark results
+
+Retrieval (10 queries over a 12-document synthetic corpus, top 4):
+
+| Method | Recall | MRR | ms/query |
+|---|---|---|---|
+| BM25 | 1.0 | 1.0 | 0.248 |
+| Vector | 1.0 | 0.95 | 0.121 |
+| Hybrid RRF | 1.0 | 1.0 | 0.133 |
+| Hybrid + rerank | 1.0 | 1.0 | 0.164 |
+
+Hybrid matches BM25's perfect recall and MRR at nearly half the latency;
+vector-only is fastest but drops to 0.95 MRR. Recall saturates because the
+corpus is small, so MRR and latency decide.
+
+User search (2,000 synthetic 64-d users, top 10, 20 queries): brute force
+7.8 ms/query with recall 1.0. `hnswlib` is not installed here, so the HNSW
+side runs the exact brute-force fallback; policy keeps exact search under
+10,000 users and switches above it.
+
 ---
 
 ## Running with Docker
