@@ -291,21 +291,22 @@ The planner UI offers a one-row style picker below the trip request: tap up to 4
 
 Retrieval (10 queries over a 12-document synthetic corpus, top 4):
 
-| Method | Recall | MRR | ms/query |
+| Method | Recall@4 | MRR | ms/query |
 |---|---|---|---|
 | BM25 | 1.0 | 1.0 | 0.248 |
 | Vector | 1.0 | 0.95 | 0.121 |
 | Hybrid RRF | 1.0 | 1.0 | 0.133 |
 | Hybrid + rerank | 1.0 | 1.0 | 0.164 |
 
-Hybrid matches BM25's perfect recall and MRR at nearly half the latency;
+Hybrid matches BM25's 1.0 Recall@4 and MRR at nearly half the latency;
 vector-only is fastest but drops to 0.95 MRR. Recall saturates because the
-corpus is small, so MRR and latency decide.
+corpus is only 12 synthetic documents, so MRR and latency decide.
 
 User search (2,000 synthetic 64-d users, top 10, 20 queries): brute force
 7.8 ms/query with recall 1.0. `hnswlib` is not installed here, so the HNSW
-side runs the exact brute-force fallback; policy keeps exact search under
-10,000 users and switches above it.
+side runs the exact brute-force fallback. The configured policy uses exact
+search under 10,000 users and HNSW above it; that threshold is a policy
+setting, not a measured crossover.
 
 ---
 
