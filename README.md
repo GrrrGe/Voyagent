@@ -343,4 +343,4 @@ Voyagent uses `langgraph-checkpoint-postgres` (`PostgresSaver`) so every run of 
 
 ## License
 
-Add your license of choice here (e.g. MIT).
+MIT — see [LICENSE](LICENSE).

@@ -3,6 +3,7 @@ name = "multi-agent-travel-planner"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+license = { text = "MIT" }
 authors = [
     { name = "George Sabu", email = "george.sabu@mail.mcgill.ca" }
 ]
