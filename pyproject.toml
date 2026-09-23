@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Karthikeyan", email = "karthikeyan.karthikeyan-ext@ab-Inbev.com" }
+    { name = "George Sabu", email = "george.sabu@mail.mcgill.ca" }
 ]
 requires-python = ">=3.12"
 dependencies = [
